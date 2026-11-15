@@ -9,15 +9,6 @@ export interface Detection {
   line: number;
   severity: Severity;
   message: string;
+  fix?: string;
   gridImpact: boolean;
-}
-
-/**
- * A detector is anything that turns files into detections: regex rules today,
- * external scanners (Semgrep, Trivy, gitleaks, OSV) and Bulwark ML models later.
- */
-export interface Detector {
-  name: string;
-  version: string;
-  detect(files: FileInput[]): Promise<Detection[]>;
 }

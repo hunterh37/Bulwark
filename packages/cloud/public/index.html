@@ -1,0 +1,58 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bulwark</title>
+<meta name="description" content="Security scanning for water, power and grid software. Runs in our cloud or inside your network.">
+<link rel="icon" href="/assets/logo-mark.svg"><link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<div class="hero"><div class="wrap">
+  <nav>
+    <a class="logo" href="/"><img src="/assets/logo-mark.svg" alt="">BULWARK</a>
+    <div class="links"><a class="btn ghost" href="#edge">Bulwark Edge</a><a class="btn ghost" href="/portal">Sign in</a><a class="btn" href="/portal#signup">Create account</a></div>
+  </nav>
+  <div class="kicker">Water · Power · EV charging · Building automation</div>
+  <h1>Security scanning for the software that runs the grid.</h1>
+  <p class="lead">Bulwark checks SCADA, HMI, PLC tooling and integration code for Modbus, DNP3, IEC 61850, OCPP and OPC UA misconfigurations, leaked secrets and disabled TLS. Run it in Bulwark Cloud or inside your own network. Source code never has to leave the plant.</p>
+  <p><a class="btn" href="/portal#signup">Create account</a> &nbsp; <a class="btn ghost" href="/download/bulwark-edge-1.0.0.tar.gz">Download Bulwark Edge</a></p>
+</div></div>
+<main class="wrap">
+  <h2>How it works</h2>
+  <section class="grid">
+    <div class="card"><h3>1. Create an account</h3><p>Set your organization and sector. Bulwark enables the modules that match.</p></div>
+    <div class="card"><h3>2. Connect GitHub or install Edge</h3><p>Connect GitHub for cloud scans, or install the Edge runner next to your on-prem Git server.</p></div>
+    <div class="card"><h3>3. Fix by priority</h3><p>Findings are ranked by grid impact with the exact file, line and remediation.</p></div>
+  </section>
+
+  <h2>Modules</h2>
+  <section class="grid" id="mods"><div class="card"><p>Loading…</p></div></section>
+
+  <h2 id="edge">Bulwark Edge for plant networks</h2>
+  <p class="lead">One file, Node 20+, zero dependencies. Runs on a jump host, in the OT DMZ, or fully air-gapped.</p>
+  <section class="grid">
+    <div class="card"><h3>Connected</h3><p>Outbound HTTPS 443 only. Sends rule, file and line. Never source.</p></div>
+    <div class="card"><h3>Air-gapped</h3><p>No network. Writes JSON and SARIF for transfer by approved media.</p></div>
+    <div class="card"><h3>Packaging</h3><p>Single-file runner, Docker image, docker compose, systemd installer, SHA-256 sums.</p></div>
+  </section>
+  <pre>curl -O https://bulwark-cloud.onrender.com/download/bulwark-edge-1.0.0.tar.gz
+tar xzf bulwark-edge-1.0.0.tar.gz && cd bulwark-edge && sha256sum -c SHA256SUMS
+node bulwark-runner.mjs scan /srv/git/scada-hmi --offline</pre>
+  <p><a class="btn ghost" href="/download/bulwark-edge-1.0.0.tar.gz">Edge kit (.tar.gz)</a> <a class="btn ghost" href="/download/bulwark-runner.mjs">Runner only (.mjs)</a> <a class="btn ghost" href="/download/SHA256SUMS.txt">SHA256SUMS</a> <a class="btn ghost" href="/infrastructure">Infrastructure PDF</a></p>
+
+  <h2>Pricing</h2>
+  <section class="grid">
+    <div class="card"><h3>Free</h3><p class="stat">$0</p><p>3 repos. Cloud scans. All modules.</p></div>
+    <div class="card"><h3>Utility</h3><p class="stat">$49<span class="mono"> /repo/mo</span></p><p>Edge runners, audit log, SARIF export.</p></div>
+    <div class="card"><h3>Enterprise</h3><p class="stat">Custom</p><p>Air-gapped kits, SSO, NERC CIP and AWIA evidence export.</p></div>
+  </section>
+  <footer>Bulwark, 2026. MIT licensed. <a href="https://github.com/hunterh37/Bulwark">Source</a></footer>
+</main>
+<script>
+document.querySelector("pre").textContent = document.querySelector("pre").textContent.replace("https://bulwark-cloud.onrender.com", location.origin);
+fetch("/v1/modules").then(r => r.json()).then(ms => {
+  document.getElementById("mods").innerHTML = ms.map(m => `<div class="card"><h3>${m.name}</h3><p class="mono">${m.id}@${m.version} · ${m.rules} rules</p><p>${m.summary}</p><p>${m.sectors.map(s => `<span class="tag">${s}</span>`).join("")}</p></div>`).join("");
+});
+</script>
+</body>
+</html>

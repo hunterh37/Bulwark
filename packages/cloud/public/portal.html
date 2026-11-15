@@ -1,0 +1,106 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bulwark Portal</title>
+<link rel="icon" href="/assets/logo-mark.svg"><link rel="stylesheet" href="/assets/style.css">
+</head>
+<body>
+<main class="wrap">
+  <nav>
+    <a class="logo" href="/"><img src="/assets/logo-mark.svg" alt="">BULWARK</a>
+    <div class="links"><span id="who" class="mono"></span><button id="logout" class="btn ghost small hidden">Sign out</button></div>
+  </nav>
+
+  <section id="auth" class="auth hidden">
+    <div class="tabs"><button data-auth="login" class="on">Sign in</button><button data-auth="signup">Create account</button></div>
+    <form id="login">
+      <label>Email</label><input name="email" type="email" required autocomplete="email">
+      <label>Password</label><input name="password" type="password" required autocomplete="current-password">
+      <p><button class="btn">Sign in</button></p><p class="err"></p>
+    </form>
+    <form id="signup" class="hidden">
+      <label>Your name</label><input name="name" autocomplete="name">
+      <label>Organization</label><input name="org" required placeholder="Springfield Water Authority">
+      <label>Sector</label>
+      <select name="sector"><option value="power">Power</option><option value="water">Water and wastewater</option><option value="ev-charging">EV charging</option><option value="building">Building automation</option><option value="oil-gas">Oil and gas</option><option value="other">Other</option></select>
+      <label>Email</label><input name="email" type="email" required autocomplete="email">
+      <label>Password (8+ characters)</label><input name="password" type="password" minlength="8" required autocomplete="new-password">
+      <p><button class="btn">Create account</button></p><p class="err"></p>
+    </form>
+  </section>
+
+  <section id="app" class="hidden">
+    <div class="tabs">
+      <button data-tab="overview" class="on">Overview</button><button data-tab="findings">Findings</button>
+      <button data-tab="github">GitHub</button><button data-tab="modules">Modules</button>
+      <button data-tab="edge">Edge runners</button><button data-tab="profile">Profile</button>
+    </div>
+
+    <div data-pane="overview">
+      <section class="grid">
+        <div class="card"><h3>Repositories</h3><p class="stat" id="nRepos">0</p></div>
+        <div class="card"><h3>Open findings</h3><p class="stat" id="nFind">0</p></div>
+        <div class="card"><h3>Grid impact</h3><p class="stat" id="nGrid">0</p></div>
+        <div class="card"><h3>Runners</h3><p class="stat" id="nRun">0</p></div>
+      </section>
+      <h2>Recent scans</h2><div class="tbl"><table id="scans"></table></div>
+      <h2>Audit log</h2><div class="tbl"><table id="audit"></table></div>
+    </div>
+
+    <div data-pane="findings" class="hidden"><div class="tbl"><table id="findings"></table></div></div>
+
+    <div data-pane="github" class="hidden">
+      <div class="card">
+        <h3>GitHub connection</h3>
+        <p id="ghState">Not connected.</p>
+        <p id="ghOauthWrap" class="hidden"><a class="btn" href="/v1/me/github/oauth">Connect with GitHub</a></p>
+        <form id="ghToken" class="row">
+          <div><label>Fine-grained token (Contents: read, Metadata: read)</label><input name="token" placeholder="github_pat_…" autocomplete="off"></div>
+          <button class="btn">Connect</button>
+        </form>
+        <p class="mono"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a token on GitHub</a></p>
+        <p><button id="ghDisconnect" class="btn ghost small hidden">Disconnect</button></p>
+        <p class="err" id="ghErr"></p>
+      </div>
+      <h2>Repositories</h2>
+      <form id="addRepo" class="row">
+        <div><label>Repository (owner/name). Public repos scan without a token.</label><input name="repo" list="ghRepos" placeholder="hunterh37/Bulwark"></div>
+        <button class="btn">Add</button>
+      </form>
+      <datalist id="ghRepos"></datalist>
+      <p class="err" id="repoErr"></p>
+      <div class="tbl"><table id="repos"></table></div>
+    </div>
+
+    <div data-pane="modules" class="hidden">
+      <p class="lead">Modules are detector packs. Enabled modules run on cloud scans and are pushed to your Edge runners on their next heartbeat.</p>
+      <div id="modList" class="grid"></div>
+      <p><button id="saveMods" class="btn">Save modules</button> <span id="modMsg" class="ok"></span></p>
+    </div>
+
+    <div data-pane="edge" class="hidden">
+      <p class="lead">Bulwark Edge runs inside your network. It scans local checkouts and sends only findings over outbound HTTPS, or runs fully offline.</p>
+      <p><a class="btn" href="/download/bulwark-edge-1.0.0.tar.gz">Download Edge kit</a> <a class="btn ghost" href="/download/bulwark-runner.mjs">Runner only</a> <a class="btn ghost" href="/download/SHA256SUMS.txt">SHA256SUMS</a></p>
+      <form id="newRunner" class="row">
+        <div><label>Mode</label><select name="mode"><option value="hybrid">Connected (outbound HTTPS)</option><option value="airgap">Air-gapped (offline import)</option></select></div>
+        <button class="btn">Create runner token</button>
+      </form>
+      <div id="runnerOut" class="hidden"><p class="ok">Token shown once. Store it in your secrets manager.</p><pre id="runnerCmd"></pre></div>
+      <h2>Runners</h2><div class="tbl"><table id="runners"></table></div>
+    </div>
+
+    <div data-pane="profile" class="hidden">
+      <form id="profile" class="card">
+        <label>Your name</label><input name="name">
+        <label>Organization</label><input name="org">
+        <label>Sector</label>
+        <select name="sector"><option value="power">Power</option><option value="water">Water and wastewater</option><option value="ev-charging">EV charging</option><option value="building">Building automation</option><option value="oil-gas">Oil and gas</option><option value="other">Other</option></select>
+        <p><button class="btn">Save profile</button> <span id="profMsg" class="ok"></span></p>
+      </form>
+    </div>
+  </section>
+</main>
+<script src="/assets/portal.js"></script>
+</body>
+</html>

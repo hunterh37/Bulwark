@@ -1,0 +1,18 @@
+# Bulwark Edge for utility networks. Mount git checkouts read-only at /repos.
+# Connected mode: set BULWARK_URL and BULWARK_TOKEN (outbound HTTPS 443 only).
+# Air-gapped mode: leave them empty; results land in ./results as JSON and SARIF.
+services:
+  bulwark-runner:
+    build: .
+    image: bulwark-runner:1.0.0
+    restart: unless-stopped
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    environment:
+      BULWARK_URL: ${BULWARK_URL:-}
+      BULWARK_TOKEN: ${BULWARK_TOKEN:-}
+    volumes:
+      - ${REPOS_DIR:-./repos}:/repos:ro
+      - ./results:/results
+    network_mode: ${NETWORK_MODE:-bridge}

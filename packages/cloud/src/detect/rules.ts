@@ -1,31 +1,21 @@
-import type { Detection, Detector, FileInput, Severity } from "./types.js";
+import { MODULES } from "../modules/index.js";
+import type { Detection, FileInput } from "./types.js";
 
-interface Rule { id: string; re: RegExp; severity: Severity; message: string; grid?: boolean; }
-
-const RULES: Rule[] = [
-  { id: "secret.aws-key", re: /AKIA[0-9A-Z]{16}/, severity: "critical", message: "AWS access key in source" },
-  { id: "secret.private-key", re: /-----BEGIN (RSA |EC |OPENSSH )?PRIVATE KEY-----/, severity: "critical", message: "Private key in source" },
-  { id: "tls.verify-disabled", re: /rejectUnauthorized:\s*false|verify\s*=\s*False|InsecureSkipVerify:\s*true/, severity: "high", message: "TLS verification disabled" },
-  { id: "ot.modbus-unauth", re: /ModbusTcpServer|StartTcpServer\(|modbus.*listen/i, severity: "high", message: "Modbus TCP server without auth layer", grid: true },
-  { id: "ot.dnp3-no-sa", re: /dnp3.*(outstation|master)/i, severity: "medium", message: "DNP3 endpoint; confirm Secure Authentication v5", grid: true },
-  { id: "ot.ocpp-ws-plain", re: /ws:\/\/[^\s"']*ocpp/i, severity: "high", message: "OCPP over plain ws://", grid: true },
-];
-
-export const ruleDetector: Detector = {
-  name: "bulwark-rules",
-  version: "0.1.0",
-  async detect(files: FileInput[]) {
-    const out: Detection[] = [];
-    for (const f of files) {
-      f.content.split("\n").forEach((text, i) => {
-        for (const r of RULES) {
-          if (r.re.test(text)) {
-            out.push({ detector: this.name, ruleId: r.id, file: f.path, line: i + 1,
-              severity: r.severity, message: r.message, gridImpact: !!r.grid });
-          }
+/** Runs the rules of the enabled modules over the files. */
+export function runModules(files: FileInput[], enabled: string[]): Detection[] {
+  const mods = MODULES.filter((m) => enabled.includes(m.id));
+  const out: Detection[] = [];
+  for (const f of files) {
+    const lines = f.content.split("\n");
+    for (const m of mods) for (const r of m.rules) {
+      if (r.files && !r.files.test(f.path)) continue;
+      lines.forEach((text, i) => {
+        if (text.length < 2000 && r.re.test(text)) {
+          out.push({ detector: `${m.id}@${m.version}`, ruleId: r.id, file: f.path, line: i + 1,
+            severity: r.severity, message: r.message, fix: r.fix, gridImpact: !!r.grid });
         }
       });
     }
-    return out;
-  },
-};
+  }
+  return out;
+}
