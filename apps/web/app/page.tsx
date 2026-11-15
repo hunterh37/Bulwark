@@ -15,6 +15,7 @@ export default function Home() {
     <main className="wrap">
       <nav>
         <span className="logo">BULWARK</span>
+        <a className="btn ghost" href="/gis">GIS map</a>
         <a className="btn ghost" href="/portal">Customer portal</a>
       </nav>
       <h1>Always-on security for grid software.</h1>

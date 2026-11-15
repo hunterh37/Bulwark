@@ -7,7 +7,8 @@ const rank: Record<AssetStatus, number> = { ok: 0, warning: 1, isolated: 2, offl
 export function project(lon: number, lat: number, zoom: number) {
     const size = 256 * 2 ** zoom;
     const clamped = Math.max(-85.0511, Math.min(85.0511, lat)) * Math.PI / 180;
-    return { x: (lon + 180) / 360 * size, y: (1 - Math.log(Math.tan(clamped) + 1 / Math.cos(clamped)) / Math.PI) / 2 * size };
+    // Stabilize the tiny math differences between Node and browser engines for SSR.
+    return { x: Number(((lon + 180) / 360 * size).toFixed(6)), y: Number(((1 - Math.log(Math.tan(clamped) + 1 / Math.cos(clamped)) / Math.PI) / 2 * size).toFixed(6)) };
 }
 function unproject(x: number, y: number, zoom: number) {
     const size = 256 * 2 ** zoom;

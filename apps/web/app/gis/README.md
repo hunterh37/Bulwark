@@ -10,7 +10,7 @@ pnpm install
 pnpm --filter @bulwark/web dev --port 3001
 ```
 
-Visit http://localhost:3001/gis. Port 3001 avoids another teammate's default server.
+Visit http://localhost:3001/gis, or select **GIS map** on the homepage. Port 3001 avoids another teammate's default server.
 For a separate worktree, install dependencies there; don't share `node_modules` or `.next`.
 
 ## Demo
@@ -62,7 +62,8 @@ from a shared page can be done by that page's owner with a link to `/gis`.
 
 ## Verification
 
-Production Next.js build and TypeScript checking passed. `/gis` returned HTTP 200
-and server-rendered the expected workspace. Automated browser interaction checks
-could not run because the environment lacks Chromium’s `libasound.so.2` dependency;
-mobile layout and browser interactions still need a manual check.
+Production Next.js build and TypeScript checking passed. Browser checks passed for
+asset selection, search, filters, alert/reset, layer toggles, zoom/fit controls, tile
+failure fallback, and mobile layout without horizontal overflow. A separate browser
+check confirmed homepage navigation and real OpenStreetMap tiles loading. Browser
+console checking confirmed no hydration errors after coordinate rounding was fixed.
