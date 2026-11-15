@@ -1,0 +1,146 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Bulwark Edge, air-gapped architecture</title>
+<style>
+@page { size: Letter; margin: 18mm 16mm; }
+body { font: 10.5pt/1.5 -apple-system, Helvetica, Arial, sans-serif; color: #111; }
+h1 { font-size: 22pt; margin: 0 0 4px; } h2 { font-size: 13.5pt; margin: 22px 0 6px; border-bottom: 2px solid #111; padding-bottom: 3px; }
+h3 { font-size: 11pt; margin: 14px 0 4px; }
+table { width: 100%; border-collapse: collapse; margin: 6px 0 10px; font-size: 9.5pt; page-break-inside: avoid; }
+th, td { border: 1px solid #999; padding: 4px 6px; text-align: left; vertical-align: top; } th { background: #eee; }
+pre { background: #f4f4f4; border: 1px solid #ccc; padding: 8px; font-size: 8.6pt; line-height: 1.3; page-break-inside: avoid; }
+.meta { color: #555; margin-bottom: 14px; } ul { margin: 4px 0 8px; padding-left: 18px; }
+</style></head><body>
+<h1>Bulwark Edge</h1>
+<div class="meta">Air-gapped, vendor-agnostic deployment for power stations and grid operators. Draft, Nov 15 2026.</div>
+
+<h2>1. Goal</h2>
+<p>Run the full Bulwark loop (detect, explain, fix, verify) inside a utility network with no internet
+connection. A small local language model replaces the cloud LLM. Nothing leaves the site except what the
+operator exports on purpose. The same software runs on Render (hosted), in a customer cloud, and on the Edge appliance.</p>
+
+<h2>2. Where it sits (Purdue model, IEC 62443 zones)</h2>
+<table>
+<tr><th>Level</th><th>Contents</th><th>Bulwark role</th></tr>
+<tr><td>L4/L5 Enterprise IT</td><td>Corporate network, email, cloud</td><td>Optional: receives exported reports through a data diode</td></tr>
+<tr><td>L3.5 IT/OT DMZ</td><td>Historian replica, patch server, jump hosts</td><td><b>Bulwark Edge appliance (default)</b>. Update import point.</td></tr>
+<tr><td>L3 Site operations</td><td>SCADA servers, engineering workstations, internal Git</td><td>Code runner + passive sensor port</td></tr>
+<tr><td>L2 Supervisory</td><td>HMI, local SCADA</td><td>Passive monitoring only (SPAN/TAP)</td></tr>
+<tr><td>L0/L1 Process, control</td><td>PLCs, RTUs, relays, IEDs</td><td>Never touched. No active scans, no writes.</td></tr>
+</table>
+<p>Rule: Bulwark never sends packets to L0 to L2 devices and never changes controller logic. It reads mirrored
+traffic and it opens merge requests on internal source repositories. Humans approve every change.</p>
+
+<h2>3. Two workloads</h2>
+<h3>A. Code security (software the utility writes or buys with source)</h3>
+<p>SCADA integrations, historian connectors, DER and EV-charging backends, scripts, IaC. Runner pulls from the
+internal Git server (GitLab self-managed, Gitea, Bitbucket DC, Azure DevOps Server), scans, asks the local model for a
+patch, runs tests in a sandbox against an offline package mirror, and opens a merge request.</p>
+<h3>B. Network detection (OT traffic)</h3>
+<p>Passive sensor on a SPAN port or hardware TAP. Protocol parsers produce events; small specialised models flag
+anomalies; the local LLM explains each alert in plain language and maps it to MITRE ATT&amp;CK for ICS.
+The LLM is a triage and explanation layer. It does not make the detection decision alone.</p>
+
+<h2>4. Architecture</h2>
+<pre>
+ Offline update bundle (USB / diode-in, signed)
+            |
+            v
+ +---------------------- Bulwark Edge appliance (L3.5 DMZ) ----------------------+
+ |  k3s / RKE2 single node  (or Podman + systemd)                                 |
+ |                                                                                |
+ |  bulwark-cloud API + portal ---- Postgres ---- job queue (SKIP LOCKED table)    |
+ |        |                                                                       |
+ |  bulwark-worker --> detectors: rules | Semgrep | Trivy | gitleaks | OSV (local DB)|
+ |        |                                                                       |
+ |  model-gateway (OpenAI-compatible API)                                         |
+ |        |-- LLM server: llama.cpp / vLLM, 7B-14B code model, quantized          |
+ |        |-- anomaly models: ONNX Runtime (autoencoder, isolation forest)        |
+ |        |                                                                       |
+ |  sandbox (gVisor / Firecracker) <-- package mirror (Nexus / Verdaccio / devpi)  |
+ +--------^-------------------------------^-------------------------------+-------+
+          | merge requests                | events                        | reports (one-way)
+   internal Git (L3)              sensor: Zeek + ICSNPP, Suricata     data diode --> IT / Render
+                                  on SPAN/TAP (L2/L3, receive-only NIC)
+</pre>
+
+<h2>5. Vendor-agnostic choices</h2>
+<table>
+<tr><th>Concern</th><th>Choice</th><th>Swappable for</th></tr>
+<tr><td>OS</td><td>RHEL 9 / Rocky 9 with DISA STIG, FIPS mode, SELinux enforcing</td><td>Ubuntu Pro (FIPS), customer golden image</td></tr>
+<tr><td>Orchestration</td><td>RKE2 single node (FIPS, CIS profile)</td><td>k3s, OpenShift, Podman + systemd</td></tr>
+<tr><td>Packaging</td><td>OCI images in one signed bundle; Zarf or Helm + oras</td><td>Plain tarball + install script</td></tr>
+<tr><td>LLM serving</td><td>llama.cpp server (CPU or GPU, GGUF)</td><td>vLLM (GPU), Ollama, TGI, NVIDIA NIM</td></tr>
+<tr><td>Model API</td><td>OpenAI-compatible endpoint behind model-gateway</td><td>Any server that speaks the same API</td></tr>
+<tr><td>Anomaly models</td><td>ONNX Runtime</td><td>Any ONNX-exporting framework</td></tr>
+<tr><td>Database</td><td>Postgres 16</td><td>Customer-managed Postgres</td></tr>
+<tr><td>Queue</td><td>Postgres table</td><td>NATS, RabbitMQ if present</td></tr>
+<tr><td>Secrets</td><td>TPM-sealed key + local Vault / sealed files</td><td>HSM, customer Vault</td></tr>
+<tr><td>Git</td><td>GitLab, Gitea, Bitbucket DC, Azure DevOps Server, GitHub Enterprise Server</td><td>Adapter interface</td></tr>
+<tr><td>Hardware</td><td>Any x86_64 server; NVIDIA GPU optional</td><td>ARM64 build for rugged edge boxes</td></tr>
+</table>
+
+<h2>6. Local model</h2>
+<ul>
+<li>Size: 7B to 14B parameter open-weight code model, 4-bit or 8-bit quantized. Pick per release from current
+open-weight code models with licenses that allow commercial on-prem use; evaluate on the Bulwark fix benchmark before shipping.</li>
+<li>Tasks: finding triage, alert explanation, patch generation for small diffs. Large refactors are out of scope.</li>
+<li>Guardrails: repo content passed as data, no tool access for the model, output must be a unified diff that applies
+cleanly, then rescan and tests decide. A wrong patch fails closed and never becomes a merge request.</li>
+<li>Fine-tuning: LoRA adapters trained at Bulwark on synthetic and public vulnerable code (OT protocol handlers,
+Modbus/DNP3/OCPP/IEC 61850 libraries). Adapters ship in the update bundle.</li>
+<li>No telemetry from the model server. Prompts and outputs logged locally to the audit log only.</li>
+</ul>
+
+<h2>7. Hardware tiers</h2>
+<table>
+<tr><th>Tier</th><th>Hardware</th><th>Model</th><th>Fit</th></tr>
+<tr><td>Small</td><td>16 cores, 64 GB RAM, 1 TB NVMe, no GPU</td><td>7B Q4 on CPU, slow patches (minutes)</td><td>Substation, small plant</td></tr>
+<tr><td>Standard</td><td>32 cores, 128 GB, 2 TB NVMe, 1x 24 GB GPU (e.g. NVIDIA L4)</td><td>14B Q4/Q8, fast</td><td>Power station, control center</td></tr>
+<tr><td>Large</td><td>64 cores, 256 GB, 2x 48 GB GPU</td><td>Larger models, many repos, multi-site sensors</td><td>Utility SOC, regional operator</td></tr>
+</table>
+<p>Sensor NICs: dedicated receive-only ports per SPAN/TAP. Rugged DIN-rail or 1U form factor depending on site.</p>
+
+<h2>8. Updates without internet</h2>
+<ul>
+<li>Bulwark publishes a monthly bundle (plus emergency bundles for critical CVEs): images, rule packs, OSV/NVD
+vulnerability DB snapshot, Suricata/Zeek signatures, model weights and adapters, SBOM, release notes.</li>
+<li>Signed with cosign and an offline root key; the appliance verifies signatures and SHA-256 before import.</li>
+<li>Transfer: scanned removable media through the site's existing transient cyber asset process, or a one-way data diode inbound.</li>
+<li>Rollback: previous bundle kept on disk; one command reverts.</li>
+</ul>
+
+<h2>9. Security of the appliance itself</h2>
+<ul>
+<li>Measured boot (TPM 2.0), full disk encryption (LUKS, TPM-sealed), read-only root filesystem.</li>
+<li>No inbound management except local console and the portal on a management VLAN with SSO/LDAP or local MFA.</li>
+<li>Egress: none by default. Optional one-way diode export of reports to IT or to Bulwark Cloud on Render.</li>
+<li>Append-only audit log, exportable for NERC CIP-007 (patch and security event evidence) and CIP-010 (configuration baselines).</li>
+<li>Our own supply chain: SBOM per image, SLSA provenance, reproducible builds, published vulnerability scan of every release.</li>
+</ul>
+
+<h2>10. Fix loop on site</h2>
+<table>
+<tr><th>Step</th><th>Action</th><th>Gate</th></tr>
+<tr><td>1</td><td>Push to internal Git or new CVE in imported DB</td><td>Repo allowlist</td></tr>
+<tr><td>2</td><td>Scan with local detectors</td><td>Severity and grid-impact ranking</td></tr>
+<tr><td>3</td><td>Local LLM writes a diff</td><td>Diff applies; size caps; no protected paths</td></tr>
+<tr><td>4</td><td>Sandbox build and tests with offline mirror</td><td>All tests pass</td></tr>
+<tr><td>5</td><td>Rescan patched tree</td><td>Finding gone, no new findings</td></tr>
+<tr><td>6</td><td>Open merge request with evidence</td><td>Human approval required; no auto-merge on Edge</td></tr>
+</table>
+
+<h2>11. Build order</h2>
+<ol>
+<li>Docker compose bundle: cloud API, worker, Postgres, llama.cpp server, model-gateway. Runs on one laptop offline.</li>
+<li>Gitea adapter + offline OSV DB + rule detector + local-LLM patch flow. Demo: air-gapped fix MR.</li>
+<li>Signed bundle tooling and import command.</li>
+<li>Zeek + ICSNPP sensor and first anomaly model on Modbus/DNP3 captures (public ICS PCAP datasets for training).</li>
+<li>RKE2 + Helm packaging, STIG image, hardware reference SKU, pilot with one utility.</li>
+</ol>
+
+<h2>12. Open questions</h2>
+<ul>
+<li>Which model license terms fit resale inside an appliance.</li>
+<li>Whether pilots want the sensor (workload B) or code security (workload A) first; the sales cycle and certification needs differ.</li>
+<li>IEC 62443-4-1 (secure development) certification timing; utilities ask for it in procurement.</li>
+</ul>
+</body></html>
