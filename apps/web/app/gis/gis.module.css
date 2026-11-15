@@ -741,3 +741,13 @@
 @media (max-width: 1150px) { .simControls { grid-template-columns: repeat(3, 1fr); } .simActions { max-width: 300px; } }
 @media (max-width: 650px) { .simControls { grid-template-columns: 1fr 1fr; gap: 14px; padding: 14px; } .simControls label:first-child { grid-column: 1 / -1; } .simBottom { grid-template-columns: 1fr; } .simActions { max-width: none; } .simAssetList { max-height: 110px; } .metrics strong { font-size: 22px; } }
 @media (prefers-reduced-motion: reduce) { .flowLine { animation: none; } }
+
+.problemBanner { background: #ff6e7810; border: 1px solid #ff6e7870; border-left: 4px solid #ff6e78; border-radius: 6px; padding: 12px 16px; margin: 12px 0; color: #ffc3c8; }
+.problemBanner b, .problemBanner > span { color: #ff9ba4; }
+.problemMarker > span { border-color: #ff6e78; box-shadow: 0 0 0 5px #ff6e7838, 0 0 16px #ff6e7855; }
+.problemRow { box-shadow: inset 3px 0 #ff6e78; }
+.problemRow b, .problemConnection b, .problemConnection span { color: #ff9ba4; }
+.problemDetails { background: #ff6e7809; box-shadow: inset 3px 0 #ff6e78; }
+.problemDetails h2, .problemDetails .assetId { color: #ff9ba4; }
+.problemDetails .alert { background: #ff6e7810; border-color: #ff6e7870; }
+.problemDetails .alert b, .problemDetails .alert p { color: #ff9ba4; }

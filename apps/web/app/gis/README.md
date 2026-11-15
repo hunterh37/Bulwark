@@ -2,7 +2,8 @@
 
 `/gis` runs a complete, browser-local synthetic water distribution simulation. No
 uploaded data, backend, database, API keys, or `.env` are needed. Open the **GIS map**
-link on the homepage.
+link on the Next.js frontend homepage. See [teammate startup instructions](../../README.md).
+The deployed cloud app currently does not host this Next.js route.
 
 ## Run
 
@@ -67,7 +68,7 @@ Consumer coordinates are indexed into real H3 cells at resolution 7 or 8 using
 - Delivered/requested ratio;
 - Households receiving at least 90% of requested demand.
 
-Cells are green at ≥90% delivered, amber at 50–90%, and red below 50%. Select a cell
+Cells are green at ≥90% delivered and red below 90%. Select a cell
 for its totals. These are analytical cells rather than administrative or utility
 boundaries. Only cells containing generated consumers are shown.
 [H3 indexing reference](https://h3geo.org/docs/api/indexing/).
@@ -77,7 +78,9 @@ boundaries. Only cells containing generated consumers are shown.
 1. Pause and set simulated time to 08:00 to compare scenarios consistently.
 2. Select a supply plant, junction, or consumer. Moving dashes show signed pipe flow;
    connected pipe readings include direction, flow, diameter, length, and velocity.
-3. Trigger **West plant outage**. East supply stays within its capacity; pressures
+3. Problem assets and affected pipes are highlighted red, including the J-5 leak
+   location even when household demand is still met. Closed pipes are red and dashed.
+   Trigger **West plant outage**. East supply stays within its capacity; pressures
    and household service fall, and pipe flows reroute.
 4. Try **South district demand surge**, **Central main leak**, or **West supply pipe
    closed**. Change demand and pump head to observe the resulting balance.
