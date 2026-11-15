@@ -1,0 +1,8 @@
+node_modules/
+.next/
+dist/
+.env*
+.egbe*
+*.tfstate*
+.terraform/
+.DS_Store
