@@ -11,3 +11,11 @@ customer's stack, which is what utilities and energy companies require.
    leaked secrets and unsafe code, ranked by grid impact.
 3. Fix: Bulwark generates the patch, runs the customer's tests in a sandbox, and opens
    a PR only when tests pass and the finding is gone.
+
+## Hosting
+Render hosts everything we run: the landing page and customer portal (apps/web), the
+Bulwark Cloud package (packages/cloud: API, job worker, detectors) and Render Postgres,
+all defined in render.yaml. Bulwark detection models will run on Render as a private
+service that the cloud worker calls. Customers who need their code on their own stack
+deploy the runner (Helm, Terraform, docker compose) and it reports to Bulwark Cloud
+over outbound HTTPS.

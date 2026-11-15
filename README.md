@@ -7,8 +7,9 @@ Built at Sundai Hack 149 (MIT, Nov 15 2026).
 
 | Path | Purpose |
 |---|---|
-| apps/web | Next.js marketing site + customer dashboard |
-| apps/api | Fastify API, GitHub App webhooks, Stripe webhooks |
+| apps/web | Next.js landing page + customer portal (Render) |
+| packages/cloud | Bulwark Cloud: API, job worker, detectors, model hook (Render) |
+| render.yaml | Render Blueprint for all hosted services + Postgres |
 | services/scanner | Runs Semgrep, Trivy, gitleaks, OSV against a commit |
 | services/fixer | LLM patch generation (Claude API) |
 | services/sandbox | Runs customer tests on the patched tree in a Firecracker microVM |
