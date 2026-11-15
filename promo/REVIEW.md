@@ -1,3 +1,24 @@
+# Bulwark demo, 30 s (1.1.0)
+
+File: `renders/bulwark-demo-30s.mp4` (1920x1080, 30 fps, h264 + aac, 30.0 s). Source: `demo30/` (HyperFrames).
+
+| Time | On screen | Source |
+|---|---|---|
+| 0.0-5.0 | Ten archive stills, "THE GRID RUNS ON CODE", "WHO CHECKS THE CODE?" | Public-domain stills, `demo30/assets/archive/CREDITS.json` |
+| 5.0-8.5 | Three insecure lines with rule id, severity and CWE; "15 REPOS. 10,233 FILES." | Lines from Scada-LTS context.xml, OpenPLC_v3 dnp3.cpp and Scada-LTS OpcUaDataSourceVO.java at the commits in `packages/cloud/eval/field-repos.json`; the DNP3 line is shortened with an ellipsis; project names are not shown |
+| 8.5-13.5 | Scan now click, findings table | Screen recording of the 1.1.0 portal on a local server, demo organization, repo hunterh37/bulwark-e2e-plant |
+| 13.5-19.5 | Fix dialog with diff and rescan line, then the row shows "PR open" | Same recording; the click opened pull request #7 on the test repo, closed after |
+| 19.5-22.0 | Edge runner command and output | Output copied from a run of bulwark-runner.mjs 1.1.0 on examples/vulnerable-plant; the test-context field is left out of the output line |
+| 22.0-25.0 | Evidence report scroll, five chips | Recording of /v1/me/report |
+| 25.0-30.0 | Mark, wordmark, tagline, URL | brand/logo-mark.svg, landing page h1 |
+
+The recording page had a drawn cursor and 150% browser zoom. The clips are cut and scaled; no UI element is added or redrawn.
+Music and SFX are the same files and licences as the cuts below. The music lift at 24.985 s lands on the end card.
+
+Checked: `npx hyperframes check` 0 errors; 17 stills from the composition and 6 frames from the rendered file viewed.
+Not done: full-speed viewing, listening, phone-width sheet, 9:16 version.
+Warnings kept: `timeline_track_too_dense` on the hook (10 hard cuts by design), `nested_media_start_basis_ambiguous` on four clips (times are scene-local).
+
 # Bulwark promo, 15 s and 30 s
 
 Files: `renders/bulwark-promo-30s.mp4`, `renders/bulwark-promo-15s.mp4` (1920x1080, 30 fps, h264 + aac).

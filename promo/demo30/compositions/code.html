@@ -1,0 +1,45 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#07090B; color:#E8EAED;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    #c-head { position:absolute; left:96px; top:84px; font:700 34px "JetBrains Mono",Menlo,monospace; letter-spacing:.16em; color:#F5C518; text-transform:uppercase; }
+    .c-row { position:absolute; left:96px; right:96px; height:190px; }
+    #c-r0 { top:190px; } #c-r1 { top:400px; } #c-r2 { top:610px; }
+    .c-code { font:700 50px "JetBrains Mono",Menlo,monospace; letter-spacing:-.02em; white-space:nowrap; color:#E8EAED; }
+    .c-code b { color:#FF5C5C; font-weight:700; }
+    .c-tag { margin-top:18px; display:flex; gap:18px; align-items:center; font:700 30px "JetBrains Mono",Menlo,monospace; }
+    .c-tag span { padding:6px 14px; border:2px solid #262B33; border-radius:8px; color:#8A919C; }
+    .c-tag .sev { color:#0B0D10; background:#FF5C5C; border-color:#FF5C5C; text-transform:uppercase; }
+    .c-tag .sev.h { background:#FF9F1C; border-color:#FF9F1C; } .c-tag .sev.m { background:#F5C518; border-color:#F5C518; }
+    #c-foot { position:absolute; left:96px; right:96px; bottom:84px; font-weight:900; font-size:104px; line-height:.95; letter-spacing:-.025em; text-transform:uppercase; }
+    #c-foot .y { color:#F5C518; }
+  </style>
+  <div id="root" data-composition-id="code" data-width="1920" data-height="1080">
+    <div id="c-head" class="clip" data-start="0" data-duration="3.5" data-track-index="0">Lines in public OT repositories</div>
+    <div id="c-r0" class="clip c-row" data-start="0.1" data-duration="3.4" data-track-index="1">
+      <div class="c-code">username="root" <b>password="root"</b></div>
+      <div class="c-tag"><span class="sev">critical</span><span>ot.default-credentials</span><span>CWE-1392</span></div>
+    </div>
+    <div id="c-r1" class="clip c-row" data-start="0.6" data-duration="2.9" data-track-index="2">
+      <div class="c-code">manager.<b>AddTCPServer</b>("DNP3_Server", …, <b>"0.0.0.0"</b>, port)</div>
+      <div class="c-tag"><span class="sev m">medium</span><span>ot.dnp3-no-sa</span><span>CWE-319</span></div>
+    </div>
+    <div id="c-r2" class="clip c-row" data-start="1.1" data-duration="2.4" data-track-index="3">
+      <div class="c-code">securityPolicy = OpcUaSecurityPolicyType.<b>NONE</b>;</div>
+      <div class="c-tag"><span class="sev h">high</span><span>ot.opcua-security-none</span><span>CWE-319</span></div>
+    </div>
+    <div id="c-foot" class="clip" data-start="1.9" data-duration="1.6" data-track-index="4"><span class="w y">15</span> <span class="w">repos.</span> <span class="w y">10,233</span> <span class="w">files.</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#c-head", { opacity: 0 }, { opacity: 1, duration: 0.12 }, 0);
+    ["#c-r0", "#c-r1", "#c-r2"].forEach((r, i) => {
+      const t = 0.1 + i * 0.5;
+      tl.fromTo(`${r} .c-code`, { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.3, ease: "power2.out" }, t);
+      tl.fromTo(`${r} .c-tag span`, { opacity: 0, y: 14 }, { opacity: 1, y: 0, duration: 0.14, stagger: 0.05, ease: "power2.out" }, t + 0.22);
+    });
+    tl.fromTo("#c-foot .w", { yPercent: 50, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.18, stagger: 0.1, ease: "power4.out" }, 1.92);
+    window.__timelines["code"] = tl;
+  </script>
+</template>
