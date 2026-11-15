@@ -11,4 +11,5 @@ cp $D/bulwark-runner.mjs ../../deploy/edge/Dockerfile ../../deploy/edge/docker-c
 tar -czf $D/bulwark-edge-1.0.0.tar.gz -C build bulwark-edge
 (cd $D && (sha256sum bulwark-runner.mjs bulwark-edge-1.0.0.tar.gz 2>/dev/null || shasum -a 256 bulwark-runner.mjs bulwark-edge-1.0.0.tar.gz) > SHA256SUMS.txt)
 cp ../../deploy/edge/docker-compose.yml $D/docker-compose.yml
+cp ../../docs/Bulwark-Infrastructure.pdf $D/Bulwark-Infrastructure.pdf
 echo bundled

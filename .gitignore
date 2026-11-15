@@ -10,3 +10,4 @@ packages/cloud/build/
 packages/cloud/public/download/bulwark-*
 packages/cloud/public/download/SHA256SUMS.txt
 packages/cloud/public/download/docker-compose.yml
+packages/cloud/public/download/
