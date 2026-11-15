@@ -9,7 +9,7 @@
 <main class="wrap">
   <nav>
     <a class="logo" href="/"><img src="/assets/logo-mark.svg" alt="">BULWARK</a>
-    <div class="links"><span id="who" class="mono"></span><button id="logout" class="btn ghost small hidden">Sign out</button></div>
+    <div class="links"><a class="btn ghost small" href="/docs">Docs</a><span id="who" class="mono"></span><button id="logout" class="btn ghost small hidden">Sign out</button></div>
   </nav>
 
   <section id="auth" class="auth hidden">
@@ -34,21 +34,31 @@
     <div class="tabs">
       <button data-tab="overview" class="on">Overview</button><button data-tab="findings">Findings</button>
       <button data-tab="github">GitHub</button><button data-tab="modules">Modules</button>
-      <button data-tab="edge">Edge runners</button><button data-tab="profile">Profile</button>
+      <button data-tab="edge">Edge runners</button><button data-tab="profile">Settings</button>
     </div>
 
     <div data-pane="overview">
-      <section class="grid">
+      <section class="grid stats">
         <div class="card"><h3>Repositories</h3><p class="stat" id="nRepos">0</p></div>
         <div class="card"><h3>Open findings</h3><p class="stat" id="nFind">0</p></div>
         <div class="card"><h3>Grid impact</h3><p class="stat" id="nGrid">0</p></div>
+        <div class="card"><h3>Known exploited</h3><p class="stat" id="nKev">0</p></div>
+        <div class="card"><h3>Fix PRs open</h3><p class="stat" id="nPr">0</p></div>
         <div class="card"><h3>Runners</h3><p class="stat" id="nRun">0</p></div>
       </section>
-      <h2>Recent scans</h2><div class="tbl"><table id="scans"></table></div>
+      <div class="head"><h2>Recent scans</h2><a class="btn ghost small" href="/v1/me/report" target="_blank" rel="noopener">Evidence report</a></div><div class="tbl"><table id="scans"></table></div>
       <h2>Audit log</h2><div class="tbl"><table id="audit"></table></div>
     </div>
 
-    <div data-pane="findings" class="hidden"><div class="tbl"><table id="findings"></table></div></div>
+    <div data-pane="findings" class="hidden">
+      <div class="chips" id="filters">
+        <button data-f="open" class="on">Open</button><button data-f="new">New</button><button data-f="grid">Grid impact</button><button data-f="kev">Known exploited</button><button data-f="fixable">Fixable</button><button data-f="all">All</button>
+        <select id="fRepo"><option value="">All repositories</option></select>
+        <label><input type="checkbox" id="fTest"> Test and example code</label>
+      </div>
+      <p class="mono" id="fCount"></p>
+      <div class="tbl"><table id="findings"></table></div>
+    </div>
 
     <div data-pane="github" class="hidden">
       <div class="card">
@@ -56,7 +66,7 @@
         <p id="ghState">Not connected.</p>
         <p id="ghOauthWrap" class="hidden"><a class="btn" href="/v1/me/github/oauth">Connect with GitHub</a></p>
         <form id="ghToken" class="row">
-          <div><label>Fine-grained token (Contents: read, Metadata: read)</label><input name="token" placeholder="github_pat_…" autocomplete="off"></div>
+          <div><label>Fine-grained token. Scans: Contents read, Metadata read. Fix PRs: Contents write, Pull requests write.</label><input name="token" placeholder="github_pat_…" autocomplete="off"></div>
           <button class="btn">Connect</button>
         </form>
         <p class="mono"><a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">Create a token on GitHub</a></p>
@@ -81,7 +91,7 @@
 
     <div data-pane="edge" class="hidden">
       <p class="lead">Bulwark Edge runs inside your network. It scans local checkouts and sends only findings over outbound HTTPS, or runs fully offline.</p>
-      <p><a class="btn" href="/download/bulwark-edge-1.0.0.tar.gz">Download Edge kit</a> <a class="btn ghost" href="/download/bulwark-runner.mjs">Runner only</a> <a class="btn ghost" href="/download/SHA256SUMS.txt">SHA256SUMS</a></p>
+      <p><a class="btn" href="/download/bulwark-edge-1.1.0.tar.gz">Download Edge kit</a> <a class="btn ghost" href="/download/bulwark-runner.mjs">Runner only</a> <a class="btn ghost" href="/download/SHA256SUMS.txt">SHA256SUMS</a></p>
       <form id="newRunner" class="row">
         <div><label>Mode</label><select name="mode"><option value="hybrid">Connected (outbound HTTPS)</option><option value="airgap">Air-gapped (offline import)</option></select></div>
         <button class="btn">Create runner token</button>
@@ -90,17 +100,47 @@
       <h2>Runners</h2><div class="tbl"><table id="runners"></table></div>
     </div>
 
-    <div data-pane="profile" class="hidden">
+    <div data-pane="profile" class="hidden stack">
       <form id="profile" class="card">
+        <h3>Organization</h3>
         <label>Your name</label><input name="name">
         <label>Organization</label><input name="org">
         <label>Sector</label>
         <select name="sector"><option value="power">Power</option><option value="water">Water and wastewater</option><option value="ev-charging">EV charging</option><option value="building">Building automation</option><option value="oil-gas">Oil and gas</option><option value="other">Other</option></select>
-        <p><button class="btn">Save profile</button> <span id="profMsg" class="ok"></span></p>
+        <p><button class="btn">Save</button> <span id="profMsg" class="ok"></span></p>
+      </form>
+      <form id="monitor" class="card">
+        <h3>Monitoring</h3>
+        <label>Rescan every repository</label>
+        <select name="scanIntervalHours"><option value="6">Every 6 hours</option><option value="24">Daily</option><option value="168">Weekly</option><option value="0">Off</option></select>
+        <label>Alert webhook for new high and critical findings (Slack, Mattermost or Teams incoming webhook URL)</label>
+        <input name="alertWebhook" type="url" placeholder="https://hooks.slack.com/services/…" autocomplete="off">
+        <p id="alertState" class="mono"></p>
+        <p><button class="btn">Save</button> <button type="button" id="testAlert" class="btn ghost">Send test alert</button> <button type="button" id="clearAlert" class="btn ghost">Remove webhook</button> <span id="monMsg" class="ok"></span></p>
+        <p class="err" id="monErr"></p>
+      </form>
+      <form id="pw" class="card">
+        <h3>Password</h3>
+        <label>Current password</label><input name="current" type="password" required autocomplete="current-password">
+        <label>New password (8+ characters)</label><input name="next" type="password" minlength="8" required autocomplete="new-password">
+        <p><button class="btn">Change password</button> <span id="pwMsg" class="ok"></span></p><p class="err" id="pwErr"></p>
+      </form>
+      <form id="del" class="card">
+        <h3>Delete organization</h3>
+        <p>Deletes the account, repositories, scans, findings, runner tokens and the audit log. This cannot be undone.</p>
+        <label>Password</label><input name="password" type="password" required autocomplete="current-password">
+        <p><button class="btn danger">Delete everything</button></p><p class="err" id="delErr"></p>
       </form>
     </div>
   </section>
 </main>
+<dialog id="fixDlg">
+  <h3 id="fixTitle"></h3>
+  <p id="fixWhy"></p>
+  <pre class="diff" id="fixDiff"></pre>
+  <p class="mono ok" id="fixVerify"></p>
+  <div class="actions"><button class="btn ghost" id="fixCancel">Cancel</button><button class="btn" id="fixGo">Open pull request</button></div>
+</dialog>
 <script src="/assets/portal.js"></script>
 </body>
 </html>

@@ -1,7 +1,8 @@
+import { createHash } from "node:crypto";
 import type { Detection, FileInput, Severity } from "../detect/types.js";
 import type { BulwarkModule, OsvQuery, OsvVuln } from "./types.js";
 
-interface Dep { name: string; version: string; ecosystem: "npm" | "PyPI" | "Go"; file: string; line: number }
+export interface Dep { name: string; version: string; ecosystem: "npm" | "PyPI" | "Go"; file: string; line: number }
 
 /** Parses lockfiles and pinned manifests into exact package versions. */
 export function parseDeps(files: FileInput[]): Dep[] {
@@ -76,7 +77,7 @@ export async function osvDirect(queries: OsvQuery[]): Promise<OsvVuln[][]> {
 export const depsOsv: BulwarkModule = {
   id: "deps-osv",
   name: "Vulnerable Dependencies",
-  version: "1.0.0",
+  version: "1.1.0",
   summary: "Known CVEs in npm, PyPI and Go dependencies from lockfiles, matched against OSV.dev.",
   sectors: ["all"],
   rules: [],
@@ -90,9 +91,12 @@ export const depsOsv: BulwarkModule = {
       for (const v of results[i] ?? []) {
         const cve = v.aliases?.find((a) => a.startsWith("CVE-"));
         const fixed = fixedIn(v);
+        const kev = !!v.kev;
         out.push({
-          detector: "deps-osv@1.0.0", ruleId: `dep.${v.id}`, file: d.file, line: d.line, severity: severity(v), gridImpact: false,
-          message: `${d.name}@${d.version}: ${cve ? cve + " " : ""}${v.summary ?? v.id}`.slice(0, 300),
+          detector: "deps-osv@1.1.0", ruleId: `dep.${v.id}`, file: d.file, line: d.line, severity: kev ? "critical" : severity(v), gridImpact: false,
+          cwe: "CWE-1395", kev,
+          fingerprint: createHash("sha1").update(`dep.${v.id}\n${d.file}\n${d.name}@${d.version}`).digest("hex").slice(0, 20),
+          message: `${kev ? "Known exploited (CISA KEV). " : ""}${d.name}@${d.version}: ${cve ? cve + " " : ""}${v.summary ?? v.id}`.slice(0, 300),
           fix: fixed ? `Upgrade ${d.name} to ${fixed} or later.` : `No fixed version published; see https://osv.dev/vulnerability/${v.id}`,
         });
       }

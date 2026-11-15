@@ -1,0 +1,17 @@
+{
+  "ChristianTremblay/BAC0": "60c55710f535f68200c5c21ad88f1712f8e2b070",
+  "EVerest/libocpp": "0a1880a0b12efd82e745707d4bffe50568f055fb",
+  "frangoteam/FUXA": "af0ec56e8d729c271885fbba2872f55975f6d246",
+  "FreeOpcUa/opcua-asyncio": "e506dc6bc63c13176a9ede78b905ca9ca0a2523f",
+  "matth-x/MicroOcpp": "ee1271b7e8d9bc8d67765c006ffdf9c022f117fe",
+  "mobilityhouse/ocpp": "dad5896ac92e3dca8f9e7f19ba09d216b0d07fa5",
+  "mz-automation/lib60870": "7a388e3e133999e1ca77ba7521d55d074b7cd2bc",
+  "mz-automation/libiec61850": "6e265c54af66ea686453b6d31c4dcce1cf7ad2bd",
+  "open62541/open62541": "3596b6f7fd12dbf4c80e9232d1d3a96c524c109d",
+  "pymodbus-dev/pymodbus": "7509a6b204e5c8a1cf9f67f4acf5e1c8db400017",
+  "SCADA-LTS/Scada-LTS": "f1cf088585cabd6f5a457698a764e0fc07cf98ee",
+  "stepfunc/dnp3": "235533ae276cd8f33b669c6db395979a308ef848",
+  "stephane/libmodbus": "a9b025d12289855490b10d77461c99e001abfc0f",
+  "steve-community/steve": "2e2e8ecdef42ca69122b9b44980e138de6e1ac9c",
+  "thiagoralves/OpenPLC_v3": "b5d41356dab4aeadca0dd7ca64ba542f870b595d"
+}

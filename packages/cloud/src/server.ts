@@ -7,7 +7,11 @@ import { checkPassword, hashPassword, seal, sha256 } from "./crypto.js";
 import { audit, enqueue, pool } from "./db.js";
 import { ghRepos, ghUser, verifySignature } from "./github.js";
 import { open } from "./crypto.js";
-import { storeFindings, workLoop } from "./jobs.js";
+import { cleanFindings, finishScan, MAX_STORED, storeFindings, workLoop } from "./jobs.js";
+import { kevInfo, kevSet, withKev } from "./kev.js";
+import { checkWebhookUrl, sendAlert } from "./notify.js";
+import { renderReport } from "./report.js";
+import { cyclonedx } from "./sbom.js";
 import { planFix } from "./fix.js";
 import { getFile } from "./github.js";
 import { osvDirect } from "./modules/deps-osv.js";
@@ -15,7 +19,20 @@ import { migrate } from "./migrate.js";
 import { catalog, DEFAULT_MODULES, MODULES } from "./modules/index.js";
 
 await migrate();
-const app = Fastify({ logger: true, bodyLimit: 10 * 1024 * 1024 });
+const VERSION = "1.1.0";
+const app = Fastify({ logger: { redact: ["req.headers.authorization", "req.headers.cookie"] }, bodyLimit: 10 * 1024 * 1024 });
+app.setErrorHandler((err: any, req, reply) => {
+  const code = err.statusCode && err.statusCode < 500 ? err.statusCode : 500;
+  if (code === 500) req.log.error(err);
+  return reply.code(code).send({ error: code === 500 ? "internal error" : err.message });
+});
+const CSP = "default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data:; connect-src 'self'; frame-ancestors 'none'; base-uri 'none'; form-action 'self'";
+app.addHook("onSend", async (_req, reply) => {
+  reply.header("x-content-type-options", "nosniff");
+  reply.header("referrer-policy", "no-referrer");
+  reply.header("content-security-policy", CSP);
+  if (process.env.NODE_ENV === "production") reply.header("strict-transport-security", "max-age=31536000; includeSubDomains");
+});
 await app.register(cors, { origin: process.env.WEB_ORIGIN ?? true, credentials: true });
 
 app.addContentTypeParser("application/json", { parseAs: "string" }, (req, body, done) => {
@@ -44,12 +61,15 @@ async function sendFile(reply: FastifyReply, rel: string) {
 app.get("/", (_q, r) => sendFile(r, "index.html"));
 app.get("/portal", (_q, r) => sendFile(r, "portal.html"));
 app.get("/privacy", (_q, r) => sendFile(r, "privacy.html"));
+app.get("/docs", (_q, r) => sendFile(r, "docs.html"));
+app.get("/favicon.ico", (_q, r) => sendFile(r, "assets/logo-mark.svg"));
+app.get("/.well-known/security.txt", (_q, r) => r.type("text/plain").send("Contact: https://github.com/hunterh37/Bulwark/security/advisories/new\nPreferred-Languages: en\n"));
 app.get("/infrastructure", (_q, r) => sendFile(r, "download/Bulwark-Infrastructure.pdf"));
 app.get<{ Params: { "*": string } }>("/assets/*", (q, r) => sendFile(r, "assets/" + q.params["*"]));
 app.get<{ Params: { "*": string } }>("/download/*", (q, r) => sendFile(r, "download/" + q.params["*"]));
 app.get("/healthz", async () => {
   await pool.query("select 1");
-  return { ok: true, modules: MODULES.map((m) => `${m.id}@${m.version}`) };
+  return { ok: true, version: VERSION, modules: MODULES.map((m) => `${m.id}@${m.version}`), kev: kevInfo().entries };
 });
 
 // ---------- rate limiting (per IP, fixed window, in memory) ----------
@@ -62,7 +82,9 @@ function limited(key: string, max: number, windowMs: number): boolean {
   return h.n > max;
 }
 setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (v.reset < now) hits.delete(k); }, 60_000).unref();
-const clientIp = (req: FastifyRequest) => String(req.headers["x-forwarded-for"] ?? req.ip).split(",")[0].trim();
+// Render sits behind Cloudflare, which sets cf-connecting-ip; x-forwarded-for can be seeded by the client.
+const clientIp = (req: FastifyRequest) =>
+  String(req.headers["cf-connecting-ip"] ?? req.headers["true-client-ip"] ?? String(req.headers["x-forwarded-for"] ?? req.ip).split(",")[0]).trim();
 
 app.addHook("onRequest", async (req, reply) => {
   const ip = clientIp(req);
@@ -155,8 +177,10 @@ app.get("/v1/modules", async () => catalog());
 app.get("/v1/me", async (req) => {
   const u = me(req);
   const { rows } = await pool.query(
-    "select id, name, sector, plan, modules, github_login from orgs where id = $1", [u.org_id]);
-  return { user: { id: u.id, email: u.email, name: u.name }, org: rows[0], githubOAuth: !!process.env.GITHUB_CLIENT_ID };
+    `select id, name, sector, plan, modules, github_login, scan_interval_hours, alert_webhook_enc is not null as alerts
+     from orgs where id = $1`, [u.org_id]);
+  return { user: { id: u.id, email: u.email, name: u.name }, org: rows[0], githubOAuth: !!process.env.GITHUB_CLIENT_ID,
+    limits: { repos: PLAN_REPOS[rows[0].plan] ?? PLAN_REPOS.free }, version: VERSION };
 });
 
 app.patch<{ Body: { name?: string; org?: string; sector?: string } }>("/v1/me/profile", async (req, reply) => {
@@ -179,6 +203,62 @@ app.put<{ Body: { modules?: string[] } }>("/v1/me/modules", async (req, reply) =
   await pool.query("update orgs set modules = $2 where id = $1", [u.org_id, ids]);
   await audit(u.org_id, u.email, "modules.set", ids);
   return { ok: true, modules: ids };
+});
+
+app.put<{ Body: { alertWebhook?: string | null; scanIntervalHours?: number } }>("/v1/me/settings", async (req, reply) => {
+  const u = me(req);
+  const { alertWebhook, scanIntervalHours } = req.body ?? {};
+  if (scanIntervalHours !== undefined) {
+    if (![0, 6, 24, 168].includes(scanIntervalHours)) return reply.code(400).send({ error: "interval must be 0, 6, 24 or 168 hours" });
+    await pool.query("update orgs set scan_interval_hours = $2 where id = $1", [u.org_id, scanIntervalHours]);
+  }
+  if (alertWebhook !== undefined) {
+    const url = (alertWebhook ?? "").trim();
+    if (url) {
+      const bad = await checkWebhookUrl(url);
+      if (bad) return reply.code(400).send({ error: `alert webhook: ${bad}` });
+    }
+    await pool.query("update orgs set alert_webhook_enc = $2 where id = $1", [u.org_id, url ? seal(url) : null]);
+  }
+  await audit(u.org_id, u.email, "settings.update", { scanIntervalHours, alertWebhook: alertWebhook === undefined ? undefined : !!alertWebhook });
+  return { ok: true };
+});
+
+app.post("/v1/me/settings/test-alert", async (req, reply) => {
+  const u = me(req);
+  const { rows } = await pool.query("select name, alert_webhook_enc from orgs where id = $1", [u.org_id]);
+  if (!rows[0]?.alert_webhook_enc) return reply.code(400).send({ error: "no alert webhook set" });
+  const ok = await sendAlert(open(rows[0].alert_webhook_enc), `Bulwark test alert for ${rows[0].name}.`);
+  return ok ? { ok: true } : reply.code(502).send({ error: "webhook did not accept the message" });
+});
+
+app.post<{ Body: { current?: string; next?: string } }>("/v1/me/password", async (req, reply) => {
+  const u = me(req);
+  const { current = "", next = "" } = req.body ?? {};
+  if (next.length < 8) return reply.code(400).send({ error: "password must be 8+ characters" });
+  const { rows } = await pool.query("select pw_hash from users where id = $1", [u.id]);
+  if (!checkPassword(current, rows[0].pw_hash)) return reply.code(403).send({ error: "current password is wrong" });
+  await pool.query("update users set pw_hash = $2 where id = $1", [u.id, hashPassword(next)]);
+  await pool.query("delete from sessions where user_id = $1 and token_hash <> $2", [u.id, sha256(sessionToken(req)!)]);
+  await audit(u.org_id, u.email, "password.change", {});
+  return { ok: true };
+});
+
+// Deletes the organization and everything stored for it.
+app.delete<{ Body: { password?: string } }>("/v1/me", async (req, reply) => {
+  const u = me(req);
+  const { rows } = await pool.query("select pw_hash from users where id = $1", [u.id]);
+  if (!checkPassword(req.body?.password ?? "", rows[0].pw_hash)) return reply.code(403).send({ error: "password is wrong" });
+  const c = await pool.connect();
+  try {
+    await c.query("begin");
+    for (const t of ["findings", "scans", "repos", "runners", "audit_log"]) await c.query(`delete from ${t} where org_id = $1`, [u.org_id]);
+    await c.query("delete from users where org_id = $1", [u.org_id]);
+    await c.query("delete from orgs where id = $1", [u.org_id]);
+    await c.query("commit");
+  } catch (e) { await c.query("rollback"); throw e; } finally { c.release(); }
+  reply.header("set-cookie", `${COOKIE}=; Path=/; HttpOnly; Max-Age=0`);
+  return { ok: true };
 });
 
 // ---------- GitHub ----------
@@ -234,11 +314,16 @@ app.get<{ Querystring: { code?: string; state?: string } }>("/v1/me/github/callb
 
 // ---------- repos, scans, findings ----------
 const REPO = /^[\w.-]+\/[\w.-]+$/;
+const PLAN_REPOS: Record<string, number> = { free: 3, team: 200, enterprise: 5000 };
 
 app.post<{ Body: { repo?: string } }>("/v1/me/repos", async (req, reply) => {
   const u = me(req);
   const repo = (req.body?.repo ?? "").trim().replace(/^https:\/\/github\.com\//, "").replace(/\.git$/, "");
   if (!REPO.test(repo)) return reply.code(400).send({ error: "use owner/name" });
+  const have = await pool.query(
+    "select (select plan from orgs where id = $1) as plan, count(*)::int as n, bool_or(full_name = $2) as dup from repos where org_id = $1", [u.org_id, repo]);
+  const cap = PLAN_REPOS[have.rows[0].plan] ?? PLAN_REPOS.free;
+  if (!have.rows[0].dup && have.rows[0].n >= cap) return reply.code(402).send({ error: `the ${have.rows[0].plan} plan covers ${cap} repositories` });
   await pool.query("insert into repos (org_id, full_name) values ($1, $2) on conflict do nothing", [u.org_id, repo]);
   await audit(u.org_id, u.email, "repo.add", { repo });
   return { ok: true, repo };
@@ -255,6 +340,9 @@ app.post<{ Body: { repo?: string; ref?: string } }>("/v1/me/scans", async (req, 
   const repo = req.body?.repo ?? "";
   const known = await pool.query("select 1 from repos where org_id = $1 and full_name = $2", [u.org_id, repo]);
   if (!known.rowCount) return reply.code(404).send({ error: "add the repo first" });
+  const busy = await pool.query(
+    "select id, status from scans where org_id = $1 and repo = $2 and status in ('queued', 'running') and created_at > now() - interval '10 minutes' limit 1", [u.org_id, repo]);
+  if (busy.rowCount) return reply.code(202).send(busy.rows[0]);
   const { rows } = await pool.query(
     "insert into scans (org_id, repo, commit) values ($1, $2, $3) returning id", [u.org_id, repo, req.body?.ref ?? null]);
   await enqueue("scan", { scanId: rows[0].id });
@@ -311,16 +399,51 @@ app.get("/v1/me/summary", async (req) => {
   const [repos, runners, scans, findings, auditRows] = await Promise.all([
     pool.query("select full_name from repos where org_id = $1 order by full_name", [org]),
     pool.query("select id, mode, last_seen from runners where org_id = $1 order by last_seen desc nulls last", [org]),
-    pool.query(`select id, repo, commit, source, status, files, findings, error, created_at from scans
+    pool.query(`select id, repo, commit, source, trigger, status, files, findings, new_findings, error, created_at,
+                  coalesce(jsonb_array_length(components), 0) as components from scans
                 where org_id = $1 order by created_at desc limit 20`, [org]),
-    pool.query(`select id, repo, commit, file, line, rule_id, detector, severity, grid_impact, message, fix, status, pr_url, fix_error
+    pool.query(`select id, repo, commit, file, line, rule_id, detector, severity, grid_impact, message, fix, status, pr_url, fix_error,
+                  context, cwe, kev, is_new, coalesce(first_seen, created_at) as first_seen
                 from findings where org_id = $1 and scan_id in
                   (select distinct on (repo) id from scans where org_id = $1 and status = 'done' order by repo, created_at desc)
-                order by case severity when 'critical' then 0 when 'high' then 1 when 'medium' then 2 else 3 end, file, line
-                limit 500`, [org]),
+                order by (context is not null), case severity when 'critical' then 0 when 'high' then 1 when 'medium' then 2 else 3 end, kev desc, file, line
+                limit 1000`, [org]),
     pool.query("select actor, action, at from audit_log where org_id = $1 order by at desc limit 25", [org]),
   ]);
   return { repos: repos.rows, runners: runners.rows, scans: scans.rows, findings: findings.rows, audit: auditRows.rows };
+});
+
+const latestScans = (org: string) => pool.query(
+  `select distinct on (repo) repo, commit, source, files, findings, finished_at, components from scans
+   where org_id = $1 and status = 'done' order by repo, created_at desc`, [org]);
+
+// CycloneDX SBOM of the latest scan of one repository.
+app.get<{ Querystring: { repo?: string } }>("/v1/me/sbom", async (req, reply) => {
+  const { rows } = await latestScans(me(req).org_id);
+  const s = rows.find((r) => r.repo === req.query.repo);
+  if (!s) return reply.code(404).send({ error: "no completed scan for that repository" });
+  reply.header("content-disposition", `attachment; filename="${s.repo.replace(/[^\w.-]+/g, "_")}.cdx.json"`);
+  return cyclonedx(s.repo, s.commit ?? "", s.components ?? [], VERSION, new Date(s.finished_at));
+});
+
+// Printable evidence report (HTML). Print to PDF from the browser.
+app.get("/v1/me/report", async (req, reply) => {
+  const u = me(req);
+  await kevSet();
+  const [org, scans, findings, auditRows] = await Promise.all([
+    pool.query("select name, sector, modules, scan_interval_hours from orgs where id = $1", [u.org_id]),
+    latestScans(u.org_id),
+    pool.query(`select repo, file, line, rule_id, severity, message, status, pr_url, context, cwe, kev, coalesce(first_seen, created_at) as first_seen
+                from findings where org_id = $1 and scan_id in
+                  (select distinct on (repo) id from scans where org_id = $1 and status = 'done' order by repo, created_at desc)
+                order by repo, case severity when 'critical' then 0 when 'high' then 1 when 'medium' then 2 else 3 end, file, line limit 2000`, [u.org_id]),
+    pool.query("select actor, action, at from audit_log where org_id = $1 order by at desc limit 50", [u.org_id]),
+  ]);
+  await audit(u.org_id, u.email, "report.export", {});
+  return reply.type("text/html; charset=utf-8").send(renderReport({
+    org: org.rows[0], generatedBy: u.email, findings: findings.rows, audit: auditRows.rows, kev: kevInfo(),
+    repos: scans.rows.map((r) => ({ ...r, components: (r.components ?? []).length })),
+  }));
 });
 
 app.post<{ Body: { mode?: string; name?: string } }>("/v1/me/runners", async (req) => {
@@ -348,20 +471,26 @@ app.post("/v1/runner/heartbeat", async (req, reply) => {
   return r ? { ok: true, runner: r.id, modules: r.modules } : reply.code(401).send({ error: "bad token" });
 });
 
-app.post<{ Body: { repo: string; commit?: string; files?: number; findings: any[] } }>(
+app.post<{ Body: { repo: string; commit?: string; files?: number; findings: any[]; components?: any[] } }>(
   "/v1/runner/findings", async (req, reply) => {
     const r = await runnerFromAuth(req.headers.authorization);
     if (!r) return reply.code(401).send({ error: "bad token" });
-    const { repo, commit = "local", files = 0, findings = [] } = req.body ?? ({} as any);
-    if (!repo || !Array.isArray(findings)) return reply.code(400).send({ error: "repo and findings[] required" });
+    const { repo, commit = "local", files = 0, findings = [], components = [] } = req.body ?? ({} as any);
+    if (typeof repo !== "string" || !repo.trim() || repo.length > 200 || !Array.isArray(findings)) return reply.code(400).send({ error: "repo and findings[] required" });
+    const clean = cleanFindings(findings.slice(0, 20000));
+    const comps = (Array.isArray(components) ? components : []).slice(0, 20000)
+      .filter((c) => c && typeof c.name === "string" && typeof c.version === "string")
+      .map((c) => ({ name: c.name.slice(0, 200), version: c.version.slice(0, 80), ecosystem: String(c.ecosystem ?? "").slice(0, 20) }));
+    const sha = String(commit).slice(0, 64);
     const s = await pool.query(
-      `insert into scans (org_id, repo, commit, source, status, files, findings, finished_at)
-       values ($1, $2, $3, 'runner', 'done', $4, $5, now()) returning id`,
-      [r.org_id, repo, commit, files, findings.length]);
+      `insert into scans (org_id, repo, commit, source, trigger, status, files, findings, components, finished_at)
+       values ($1, $2, $3, 'runner', 'runner', 'done', $4, $5, $6, now()) returning id`,
+      [r.org_id, repo, sha, Number(files) | 0, clean.length, JSON.stringify(comps)]);
     await pool.query("insert into repos (org_id, full_name) values ($1, $2) on conflict do nothing", [r.org_id, repo]);
-    await storeFindings(r.org_id, s.rows[0].id, repo, commit, findings);
-    await audit(r.org_id, `runner:${r.id}`, "findings.ingest", { repo, commit, count: findings.length });
-    return { stored: findings.length, scan: s.rows[0].id };
+    const fresh = await storeFindings(r.org_id, s.rows[0].id, repo, sha, clean);
+    await audit(r.org_id, `runner:${r.id}`, "findings.ingest", { repo, commit: sha, count: clean.length });
+    await finishScan(r.org_id, s.rows[0].id, repo, sha, fresh, clean.length).catch((e) => req.log.error(e));
+    return { stored: Math.min(clean.length, MAX_STORED), new: fresh, scan: s.rows[0].id };
   });
 
 // Dependency lookups for connected Edge runners: package names and versions only, never source.
@@ -369,7 +498,7 @@ app.post<{ Body: { queries: any[] } }>("/v1/runner/osv", async (req, reply) => {
   const r = await runnerFromAuth(req.headers.authorization);
   if (!r) return reply.code(401).send({ error: "bad token" });
   const q = Array.isArray(req.body?.queries) ? req.body.queries.slice(0, 5000) : [];
-  try { return { results: await osvDirect(q) }; } catch (e) { return reply.code(502).send({ error: String((e as Error).message) }); }
+  try { return { results: await withKev(osvDirect)(q) }; } catch (e) { return reply.code(502).send({ error: String((e as Error).message) }); }
 });
 
 // ---------- GitHub App webhook ----------
@@ -381,7 +510,7 @@ app.post("/v1/github/webhook", async (req, reply) => {
   if (req.headers["x-github-event"] === "push" && body.repository?.full_name) {
     const { rows } = await pool.query("select org_id from repos where full_name = $1", [body.repository.full_name]);
     for (const row of rows) {
-      const s = await pool.query("insert into scans (org_id, repo, commit) values ($1, $2, $3) returning id",
+      const s = await pool.query("insert into scans (org_id, repo, commit, trigger) values ($1, $2, $3, 'push') returning id",
         [row.org_id, body.repository.full_name, body.after]);
       await enqueue("scan", { scanId: s.rows[0].id });
     }
@@ -392,4 +521,5 @@ app.post("/v1/github/webhook", async (req, reply) => {
 let stopping = false;
 process.on("SIGTERM", () => { stopping = true; void app.close(); });
 await app.listen({ port: Number(process.env.PORT ?? 10000), host: "0.0.0.0" });
+void kevSet();
 if (process.env.INLINE_WORKER !== "false") void workLoop(() => stopping);

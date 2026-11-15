@@ -3,56 +3,68 @@
 <head>
 <meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Bulwark</title>
-<meta name="description" content="Security scanning for water, power and grid software. Runs in our cloud or inside your network.">
+<meta name="description" content="Code scanning for power, water, EV charging and building automation software. OT protocol rules, fix pull requests, SBOM and evidence reports. Runs in CI, in the cloud or air-gapped.">
 <link rel="icon" href="/assets/logo-mark.svg"><link rel="stylesheet" href="/assets/style.css">
 </head>
 <body>
 <div class="hero"><div class="wrap">
   <nav>
     <a class="logo" href="/"><img src="/assets/logo-mark.svg" alt="">BULWARK</a>
-    <div class="links"><a class="btn ghost" href="#edge">Bulwark Edge</a><a class="btn ghost" href="/portal">Sign in</a><a class="btn" href="/portal#signup">Create account</a></div>
+    <div class="links"><a class="btn ghost" href="/docs">Docs</a><a class="btn ghost" href="#edge">Edge</a><a class="btn ghost" href="/portal">Sign in</a><a class="btn" href="/portal#signup">Create account</a></div>
   </nav>
-  <div class="kicker">Water · Power · EV charging · Building automation</div>
+  <div class="kicker">Power · Water · EV charging · Building automation</div>
   <h1>Security scanning for the software that runs the grid.</h1>
-  <p class="lead">Bulwark checks SCADA, HMI, PLC tooling and integration code for Modbus, DNP3, IEC 61850, OCPP and OPC UA misconfigurations, leaked secrets and disabled TLS. Run it in Bulwark Cloud or inside your own network. Source code never has to leave the plant.</p>
-  <p><a class="btn" href="/portal#signup">Create account</a> &nbsp; <a class="btn ghost" href="/download/bulwark-edge-1.0.0.tar.gz">Download Bulwark Edge</a></p>
+  <p class="lead">Bulwark reads SCADA, HMI, charger and gateway code for insecure Modbus, DNP3, IEC 61850, IEC 60870-5-104, OCPP, OPC UA and BACnet configuration, default credentials, leaked secrets and vulnerable dependencies. It opens a verified fix pull request and keeps the SBOM and evidence report an assessor asks for.</p>
+  <p><a class="btn" href="/portal#signup">Create account</a> &nbsp; <a class="btn ghost" href="/docs#ci">Add to CI</a> &nbsp; <a class="btn ghost" href="/download/bulwark-edge-1.1.0.tar.gz">Download Bulwark Edge</a></p>
 </div></div>
 <main class="wrap">
   <h2>How it works</h2>
   <section class="grid">
-    <div class="card"><h3>1. Create an account</h3><p>Set your organization and sector. Bulwark enables the modules that match.</p></div>
-    <div class="card"><h3>2. Connect GitHub or install Edge</h3><p>Connect GitHub for cloud scans, or install the Edge runner next to your on-prem Git server.</p></div>
-    <div class="card"><h3>3. Fix by priority</h3><p>Findings are ranked by grid impact with the exact file, line and remediation.</p></div>
+    <div class="card"><h3>1. Scan</h3><p>In GitHub Actions on every pull request, in Bulwark Cloud on a schedule, or on an Edge runner next to an on-prem Git server.</p></div>
+    <div class="card"><h3>2. Rank</h3><p>Findings carry a CWE id and a grid-impact flag. Dependency advisories in the CISA Known Exploited Vulnerabilities catalog go to the top. Test and example code is kept out of the count.</p></div>
+    <div class="card"><h3>3. Fix</h3><p>Bulwark patches the line, rescans the patched file and opens a pull request when the finding is gone and nothing new appears. Your CI runs on the branch.</p></div>
+    <div class="card"><h3>4. Prove</h3><p>CycloneDX SBOM per repository and a printable evidence report with scan dates, commits, findings, fixes and the audit log.</p></div>
   </section>
 
   <h2>Modules</h2>
   <section class="grid" id="mods"><div class="card"><p>Loading…</p></div></section>
+  <p><a class="btn ghost" href="/docs#rules">All rules</a></p>
+
+  <h2>Measured</h2>
+  <section class="grid">
+    <div class="card"><h3>Field run</h3><p class="stat">0.66</p><p>Labeled precision on 47 live findings from 15 public OT repositories (10,233 files). The 1.0.0 rules reported 5,192 findings on the same code.</p></div>
+    <div class="card"><h3>Labeled corpus</h3><p class="stat">1.00 / 1.00</p><p>Precision and recall on 77 labeled lines, checked in CI on every push.</p></div>
+    <div class="card"><h3>Fix pull requests</h3><p class="stat">11 / 11</p><p>Autofix cases patched and confirmed by rescan. Seven rules have an autofix.</p></div>
+  </section>
+  <p><a class="btn ghost" href="https://github.com/hunterh37/Bulwark/blob/main/packages/cloud/eval/FIELD.md">Field report</a> <a class="btn ghost" href="https://github.com/hunterh37/Bulwark/blob/main/packages/cloud/eval/REPORT.md">Corpus report</a></p>
+
+  <h2 id="ci">CI gate</h2>
+  <pre>- uses: actions/checkout@v4
+- uses: hunterh37/Bulwark@main
+  with:
+    fail-on: high</pre>
+  <p>No account needed. Fails the job on high or critical findings and writes SARIF for GitHub code scanning. <a href="/docs#ci">Docs</a></p>
 
   <h2 id="edge">Bulwark Edge for plant networks</h2>
   <p class="lead">One file, Node 20+, zero dependencies. Runs on a jump host, in the OT DMZ, or fully air-gapped.</p>
   <section class="grid">
-    <div class="card"><h3>Connected</h3><p>Outbound HTTPS 443 only. Sends rule, file and line. Never source.</p></div>
-    <div class="card"><h3>Air-gapped</h3><p>No network. Writes JSON and SARIF for transfer by approved media.</p></div>
-    <div class="card"><h3>Packaging</h3><p>Single-file runner, Docker image, docker compose, systemd installer, SHA-256 sums.</p></div>
+    <div class="card"><h3>Connected</h3><p>Outbound HTTPS 443 only. Sends rule, file path, line and the package list. Never source.</p></div>
+    <div class="card"><h3>Air-gapped</h3><p>No network. Writes JSON, SARIF and a CycloneDX SBOM for transfer by approved media.</p></div>
+    <div class="card"><h3>Packaging</h3><p>Single-file runner, signed Docker image, docker compose, systemd installer, SHA-256 sums.</p></div>
   </section>
-  <pre>curl -O https://bulwark-cloud.onrender.com/download/bulwark-edge-1.0.0.tar.gz
-tar xzf bulwark-edge-1.0.0.tar.gz && cd bulwark-edge && sha256sum -c SHA256SUMS
-node bulwark-runner.mjs scan /srv/git/scada-hmi --offline</pre>
-  <p><a class="btn ghost" href="/download/bulwark-edge-1.0.0.tar.gz">Edge kit (.tar.gz)</a> <a class="btn ghost" href="/download/bulwark-runner.mjs">Runner only (.mjs)</a> <a class="btn ghost" href="/download/SHA256SUMS.txt">SHA256SUMS</a> <a class="btn ghost" href="/infrastructure">Infrastructure PDF</a></p>
+  <pre data-origin>curl -O https://bulwark-cloud.onrender.com/download/bulwark-edge-1.1.0.tar.gz
+tar xzf bulwark-edge-1.1.0.tar.gz && cd bulwark-edge && sha256sum -c SHA256SUMS
+node bulwark-runner.mjs scan /srv/git/scada-hmi --offline --list</pre>
+  <p><a class="btn ghost" href="/download/bulwark-edge-1.1.0.tar.gz">Edge kit (.tar.gz)</a> <a class="btn ghost" href="/download/bulwark-runner.mjs">Runner only (.mjs)</a> <a class="btn ghost" href="/download/SHA256SUMS.txt">SHA256SUMS</a> <a class="btn ghost" href="/infrastructure">Infrastructure PDF</a></p>
 
   <h2>Pricing</h2>
   <section class="grid">
-    <div class="card"><h3>Free</h3><p class="stat">$0</p><p>3 repos. Cloud scans. All modules.</p></div>
-    <div class="card"><h3>Utility</h3><p class="stat">$49<span class="mono"> /repo/mo</span></p><p>Edge runners, audit log, SARIF export.</p></div>
-    <div class="card"><h3>Enterprise</h3><p class="stat">Custom</p><p>Air-gapped kits, SSO, NERC CIP and AWIA evidence export.</p></div>
+    <div class="card"><h3>Free</h3><p class="stat">$0</p><p>3 repositories. All modules, fix pull requests, SBOM, evidence report, Edge runner and CI gate.</p></div>
+    <div class="card"><h3>Team</h3><p class="stat">$49<span class="mono"> /repo/mo</span></p><p>More repositories. Paid plans start with pilot customers. <a href="https://github.com/hunterh37/Bulwark/issues/new?title=Pilot%20request">Request a pilot</a></p></div>
+    <div class="card"><h3>Enterprise</h3><p class="stat">Custom</p><p>Air-gapped kits, self-hosted control plane and help mapping evidence to IEC 62443-4-1, the EU Cyber Resilience Act and NERC CIP-013.</p></div>
   </section>
-  <footer>Bulwark, 2026. MIT licensed. <a href="https://github.com/hunterh37/Bulwark">Source</a> · <a href="/privacy">Privacy</a></footer>
+  <footer>Bulwark, 2026. MIT licensed. <a href="https://github.com/hunterh37/Bulwark">Source</a> · <a href="/docs">Docs</a> · <a href="/privacy">Privacy</a></footer>
 </main>
-<script>
-document.querySelector("pre").textContent = document.querySelector("pre").textContent.replace("https://bulwark-cloud.onrender.com", location.origin);
-fetch("/v1/modules").then(r => r.json()).then(ms => {
-  document.getElementById("mods").innerHTML = ms.map(m => `<div class="card"><h3>${m.name}</h3><p class="mono">${m.id}@${m.version} · ${m.analyzer ? "lockfile analyzer" : m.rules + " rules"}</p><p>${m.summary}</p><p>${m.sectors.map(s => `<span class="tag">${s}</span>`).join("")}</p></div>`).join("");
-});
-</script>
+<script src="/assets/landing.js"></script>
 </body>
 </html>

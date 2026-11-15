@@ -23,7 +23,7 @@ jobs:
         with:
           context: packages/cloud/build/bulwark-edge
           push: true
-          tags: ghcr.io/hunterh37/bulwark-runner:1.0.0,ghcr.io/hunterh37/bulwark-runner:latest
+          tags: ghcr.io/hunterh37/bulwark-runner:1.1.0,ghcr.io/hunterh37/bulwark-runner:latest
       - uses: sigstore/cosign-installer@v3
       - run: cosign sign --yes ghcr.io/hunterh37/bulwark-runner@${{ steps.build.outputs.digest }}
-      - run: docker run --rm ghcr.io/hunterh37/bulwark-runner:1.0.0 modules
+      - run: docker run --rm ghcr.io/hunterh37/bulwark-runner:1.1.0 modules

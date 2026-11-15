@@ -1,23 +1,24 @@
 # Bulwark eval
 
-Generated 2026-11-15T20:26:33.081Z. Corpus: 46 labeled lines, 11 fix cases, 4 lockfiles.
+Generated 2026-11-15T21:06:30.478Z. Corpus: 77 labeled lines, 12 fix cases, 4 lockfiles.
 
 ## Detection (grid-ot, secrets-core)
 
-Precision 1.000, recall 1.000 (TP 32, FP 0, FN 0).
+Precision 1.000, recall 1.000 (TP 43, FP 0, FN 0).
 
 | Rule | TP | FP | FN | Precision | Recall |
 |---|---|---|---|---|---|
 | ot.bacnet-bind-all | 1 | 0 | 0 | 1.00 | 1.00 |
-| ot.default-credentials | 3 | 0 | 0 | 1.00 | 1.00 |
-| ot.dnp3-no-sa | 2 | 0 | 0 | 1.00 | 1.00 |
+| ot.default-credentials | 4 | 0 | 0 | 1.00 | 1.00 |
+| ot.dnp3-no-sa | 3 | 0 | 0 | 1.00 | 1.00 |
 | ot.iec104-plain | 2 | 0 | 0 | 1.00 | 1.00 |
 | ot.iec61850-mms-plain | 1 | 0 | 0 | 1.00 | 1.00 |
-| ot.modbus-bind-all | 2 | 0 | 0 | 1.00 | 1.00 |
-| ot.modbus-tcp-server | 4 | 0 | 0 | 1.00 | 1.00 |
-| ot.modbus-write-unchecked | 2 | 0 | 0 | 1.00 | 1.00 |
+| ot.modbus-bind-all | 4 | 0 | 0 | 1.00 | 1.00 |
+| ot.modbus-tcp-server | 5 | 0 | 0 | 1.00 | 1.00 |
+| ot.modbus-write-from-input | 2 | 0 | 0 | 1.00 | 1.00 |
+| ot.modbus-write-unchecked | 4 | 0 | 0 | 1.00 | 1.00 |
 | ot.ocpp-ws-plain | 2 | 0 | 0 | 1.00 | 1.00 |
-| ot.opcua-security-none | 2 | 0 | 0 | 1.00 | 1.00 |
+| ot.opcua-security-none | 4 | 0 | 0 | 1.00 | 1.00 |
 | ot.setpoint-no-limit | 2 | 0 | 0 | 1.00 | 1.00 |
 | secret.aws-key | 2 | 0 | 0 | 1.00 | 1.00 |
 | secret.github-token | 1 | 0 | 0 | 1.00 | 1.00 |
@@ -29,10 +30,11 @@ No errors.
 
 ## Autofix
 
-10/10 expected autofixes patched and verified by rescan.
+11/11 expected autofixes patched and verified by rescan.
 
 | Rule | File | Result | Patched line |
 |---|---|---|---|
+| ot.opcua-security-none | opc.py | patched, verified | server.set_security_policy([ua.SecurityPolicyType.Basic256Sha256_SignAndEncrypt]) |
 | secret.aws-key | aws.py | patched, verified | import os / import boto3 / KEY = os.environ["AWS_ACCESS_KEY_ID"] |
 | secret.aws-key | aws.js | patched, verified | const key = process.env.AWS_ACCESS_KEY_ID; |
 | ot.default-credentials | hmi.py | patched, verified | import os / CREDS = {"user": "op", "password": os.environ["OT_DEVICE_PASSWORD"]} |

@@ -1,0 +1,36 @@
+name: Bulwark scan
+description: Scans OT and grid software for insecure protocol configuration, leaked secrets and vulnerable dependencies. Writes SARIF and a CycloneDX SBOM.
+branding: { icon: shield, color: yellow }
+inputs:
+  path: { description: Directory to scan, default: "." }
+  fail-on: { description: "Fail the job at this severity or above: critical, high, medium or none", default: high }
+  dependencies: { description: "Look up dependency advisories at OSV.dev and CISA KEV (sends package names and versions)", default: "true" }
+  out: { description: Results directory, default: bulwark-results }
+  bulwark-url: { description: Bulwark Cloud base URL, default: "https://bulwark-cloud.onrender.com" }
+  token: { description: Runner token (bwr_...) to report findings to Bulwark Cloud. Optional., default: "" }
+outputs:
+  results: { description: Results directory with .json, .sarif and .cdx.json, value: "${{ inputs.out }}" }
+runs:
+  using: composite
+  steps:
+    - shell: bash
+      env:
+        BULWARK_URL: ${{ inputs.token != '' && inputs.bulwark-url || '' }}
+        BULWARK_TOKEN: ${{ inputs.token }}
+        BW_BASE: ${{ inputs.bulwark-url }}
+        BW_PATH: ${{ inputs.path }}
+        BW_OUT: ${{ inputs.out }}
+        BW_FAIL: ${{ inputs.fail-on }}
+        BW_DEPS: ${{ inputs.dependencies }}
+        BW_REPO: ${{ github.repository }}
+      run: |
+        set -euo pipefail
+        dir="$RUNNER_TEMP/bulwark"; mkdir -p "$dir"; cd "$dir"
+        curl -fsSL -o bulwark-runner.mjs "$BW_BASE/download/bulwark-runner.mjs"
+        curl -fsSL -o SHA256SUMS.txt "$BW_BASE/download/SHA256SUMS.txt"
+        grep ' bulwark-runner.mjs$' SHA256SUMS.txt | sha256sum -c -
+        cd "$GITHUB_WORKSPACE"
+        args=(scan "$BW_PATH" --repo "$BW_REPO" --out "$BW_OUT" --list)
+        if [ "$BW_DEPS" = "true" ] && [ -z "$BULWARK_TOKEN" ]; then args+=(--osv); fi
+        if [ "$BW_FAIL" != "none" ]; then args+=(--fail-on "$BW_FAIL"); fi
+        node "$dir/bulwark-runner.mjs" "${args[@]}"

@@ -6,9 +6,22 @@ export interface Rule {
   severity: Severity;
   message: string;
   fix: string;
+  cwe: string;
   grid?: boolean;
   /** Only test files whose path matches. */
   files?: RegExp;
+  /** Never test files whose path matches (translation catalogs and similar). */
+  skipPaths?: RegExp;
+  /** Only test files whose content matches (protocol library in use). */
+  fileHas?: RegExp;
+  /** A line that also matches this is not reported (loopback binds and similar). */
+  unless?: RegExp;
+  /** Match comment and import lines too. Secrets leak from comments; protocol calls do not run there. */
+  comments?: boolean;
+  /** Skip lines that declare or define the matched name instead of calling it. */
+  call?: boolean;
+  /** Report once per file at the first match, with the match count in the message. */
+  perFile?: boolean;
   /** Rewrites one matching line so the rule no longer fires. Null when no safe rewrite. */
   autofix?: (line: string, path: string) => string | null;
   /** Line inserted at the top of the file when the autofix needs it (e.g. "import os"). */
@@ -16,7 +29,7 @@ export interface Rule {
 }
 
 export interface OsvQuery { package: { name: string; ecosystem: string }; version: string }
-export interface OsvVuln { id: string; summary?: string; aliases?: string[]; severity?: { score: string }[];
+export interface OsvVuln { id: string; summary?: string; aliases?: string[]; severity?: { score: string }[]; kev?: boolean;
   database_specific?: { severity?: string }; affected?: { ranges?: { events: { fixed?: string }[] }[] }[] }
 
 /** Lookup of known vulnerabilities. Cloud calls OSV directly; Edge goes through Bulwark Cloud or skips offline. */

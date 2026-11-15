@@ -1,0 +1,30 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:transparent; color:#0B0D10;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    #rv-wrap { position:absolute; inset:0; overflow:hidden; }
+    #rv-panel { position:absolute; inset:0; background:#F5C518; }
+    #rv-name { position:absolute; left:96px; top:230px; font-weight:900; font-size:330px; line-height:.9; letter-spacing:-.04em; }
+    #rv-does { position:absolute; left:96px; top:550px; font-weight:900; font-size:172px; line-height:.92; letter-spacing:-.03em; text-transform:uppercase; white-space:nowrap; }
+    #rv-what { position:absolute; left:104px; top:790px; font:700 58px "JetBrains Mono",Menlo,monospace; letter-spacing:.02em; }
+  </style>
+  <div id="root" data-composition-id="reveal" data-width="1920" data-height="1080">
+    <div id="rv-wrap" class="clip" data-start="0" data-duration="2.35" data-track-index="0" data-layout-ignore>
+      <div id="rv-panel"></div>
+      <div id="rv-name">BULWARK</div>
+      <div id="rv-does">checks the code</div>
+      <div id="rv-what">SCADA · HMI · PLC tooling · integration code</div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // the name is on the drop frame; the answer and the scope land on the next beats
+    tl.fromTo("#rv-name", {scale:1.08, transformOrigin:"0% 50%"}, {scale:1, duration:0.3, ease:"expo.out"}, 0);
+    tl.fromTo("#rv-does", {clipPath:"inset(0% 100% 0% 0%)"}, {clipPath:"inset(0% 0% 0% 0%)", duration:0.22, ease:"power4.out"}, 0.5);
+    tl.fromTo("#rv-what", {opacity:0}, {opacity:1, duration:0.06, ease:"none"}, 1.0);
+    // the volt panel lifts off the portal underneath
+    tl.fromTo("#rv-wrap", {clipPath:"inset(0% 0% 0% 0%)"}, {clipPath:"inset(0% 0% 100% 0%)", duration:0.32, ease:"power3.inOut"}, 2.0);
+    window.__timelines["reveal"] = tl;
+  </script>
+</template>

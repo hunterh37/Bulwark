@@ -76,7 +76,13 @@ export async function openFixPr(repo: string, token: string, p: { path: string; 
   const meta = await gh(`/repos/${repo}`, token);
   const base = meta.default_branch as string;
   const head = await gh(`/repos/${repo}/git/ref/heads/${base}`, token);
-  await ghWrite("POST", `/repos/${repo}/git/refs`, token, { ref: `refs/heads/${p.branch}`, sha: head.object.sha });
+  try {
+    await ghWrite("POST", `/repos/${repo}/git/refs`, token, { ref: `refs/heads/${p.branch}`, sha: head.object.sha });
+  } catch (e) {
+    // A branch left by an earlier attempt is moved to the current head.
+    if (!/ 422 /.test(String((e as Error).message))) throw e;
+    await ghWrite("PATCH", `/repos/${repo}/git/refs/heads/${p.branch}`, token, { sha: head.object.sha, force: true });
+  }
   const current = await getFile(repo, p.path, p.branch, token);
   await ghWrite("PUT", `/repos/${repo}/contents/${encodeURI(p.path)}`, token, {
     message: p.title, branch: p.branch, sha: current.sha, content: Buffer.from(p.content, "utf8").toString("base64"),

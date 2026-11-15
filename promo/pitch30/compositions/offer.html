@@ -1,0 +1,28 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#0B0D10; color:#FFFFFF;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    #of-photo-wrap { position:absolute; inset:0; overflow:hidden; }
+    #of-photo { position:absolute; left:-192px; top:-108px; width:2304px; height:1296px; }
+    #of-scrim { position:absolute; inset:0;
+      background:linear-gradient(180deg, rgba(11,13,16,.25) 0%, rgba(11,13,16,.05) 35%, rgba(11,13,16,.80) 100%); }
+    #of-plan { position:absolute; left:104px; top:150px; font:700 46px "JetBrains Mono",Menlo,monospace; color:#F5C518; letter-spacing:.04em; }
+    #of-price { position:absolute; left:84px; top:190px; font-weight:900; font-size:560px; line-height:1; letter-spacing:-.05em; }
+    #of-line { position:absolute; left:96px; right:96px; bottom:96px; font-weight:900; font-size:112px; line-height:1; letter-spacing:-.025em; }
+    #of-line .w { display:inline-block; }
+  </style>
+  <div id="root" data-composition-id="offer" data-width="1920" data-height="1080">
+    <div id="of-photo-wrap" class="clip" data-start="0" data-duration="4.4" data-track-index="0" data-layout-ignore><img id="of-photo" src="assets/photos/wind-sunset.jpg" alt=""><div id="of-scrim"></div></div>
+    <div id="of-plan" class="clip" data-start="0" data-duration="4.4" data-track-index="1">Free</div>
+    <div id="of-price" class="clip" data-start="0" data-duration="4.4" data-track-index="2">$0</div>
+    <div id="of-line" class="clip" data-start="1" data-duration="3.4" data-track-index="3"><span class="w">3 repos.</span> <span class="w">Cloud scans.</span> <span class="w">All modules.</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#of-photo", {scale:0.95}, {scale:0.88, duration:4.4, ease:"none"}, 0);
+    tl.fromTo("#of-price", {scale:1.12, transformOrigin:"0% 60%"}, {scale:1, duration:0.3, ease:"expo.out"}, 0);
+    tl.fromTo("#of-line .w", {opacity:0, scale:1.14, transformOrigin:"0% 100%"}, {opacity:1, scale:1, duration:0.14, stagger:0.5, ease:"power3.out"}, 1.0);
+    window.__timelines["offer"] = tl;
+  </script>
+</template>
