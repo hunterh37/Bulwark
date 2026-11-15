@@ -4,7 +4,7 @@ import type { MapAsset, MapTelemetry, MapTopology, AssetStatus } from './data';
 import styles from './gis.module.css';
 import type { DistrictSummary } from './districts';
 import type { PipeReading } from './simulation';
-export const statusColors: Record<AssetStatus, string> = { ok: '#4ee0b0', warning: '#f4c35e', alarm: '#ff6e78', offline: '#8c99ab', isolated: '#b39aff' };
+export const statusColors: Record<AssetStatus, string> = { ok: '#4ee0b0', warning: '#ff6e78', alarm: '#ff6e78', offline: '#ff6e78', isolated: '#ff6e78' };
 const rank: Record<AssetStatus, number> = { ok: 0, warning: 1, isolated: 2, offline: 3, alarm: 4 };
 export function project(lon: number, lat: number, zoom: number) {
     const size = 256 * 2 ** zoom;
@@ -24,13 +24,15 @@ interface Props {
     visibleAssetIds?: string[];
     showSegments?: boolean;
     tileUrl?: string;
+    problemAssetIds?: string[];
+    problemSegmentIds?: string[];
     districts?: DistrictSummary[];
     pipeReadings?: PipeReading[];
     selectedDistrictId?: string;
     onSelectDistrict?: (district: DistrictSummary) => void;
 }
 /** Dependency-free slippy map. Pass existing ops Topology and Telemetry directly. */
-export default function NetworkMap({ topology, telemetry = [], selectedAssetId, onSelectAsset, visibleAssetIds, showSegments = true, districts = [], pipeReadings = [], selectedDistrictId, onSelectDistrict, tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' }: Props) {
+export default function NetworkMap({ topology, telemetry = [], selectedAssetId, onSelectAsset, visibleAssetIds, showSegments = true, problemAssetIds = [], problemSegmentIds = [], districts = [], pipeReadings = [], selectedDistrictId, onSelectDistrict, tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' }: Props) {
     const container = useRef<HTMLDivElement>(null);
     const suppressClick = useRef(false);
     const drag = useRef<{
@@ -104,20 +106,22 @@ export default function NetworkMap({ topology, telemetry = [], selectedAssetId, 
     <svg className={styles.overlay} width={size.width} height={size.height} aria-label="Water pipes and H3 districts">
       {districts.map(district => {
         const points = district.boundary.map(([lon, lat]) => { const p = point(lon, lat); return `${p.x.toFixed(3)},${p.y.toFixed(3)}`; }).join(' ');
-        const color = district.serviceRatio >= .9 ? '#4ee0b0' : district.serviceRatio >= .5 ? '#f4c35e' : '#ff6e78';
-        return <polygon key={district.id} data-district={district.id} points={points} fill={color} fillOpacity={selectedDistrictId === district.id ? .34 : .14} stroke={selectedDistrictId === district.id ? '#ffffff' : color} strokeWidth={selectedDistrictId === district.id ? 2.5 : 1} style={{ pointerEvents: 'all', cursor: 'pointer' }} role="button" tabIndex={0} aria-label={`District ${district.id}, ${district.households} households, ${(district.serviceRatio * 100).toFixed(0)} percent demand served`} onClick={() => onSelectDistrict?.(district)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDistrict?.(district); } }}><title>{`${district.id}: ${district.deliveredM3h.toFixed(1)} / ${district.demandM3h.toFixed(1)} m³/h · ${district.households} households`}</title></polygon>;
+        const color = district.serviceRatio >= .9 ? '#4ee0b0' : '#ff6e78';
+        return <polygon key={district.id} data-district={district.id} data-problem={district.serviceRatio < .9} points={points} fill={color} fillOpacity={selectedDistrictId === district.id ? .34 : .14} stroke={selectedDistrictId === district.id ? '#ffffff' : color} strokeWidth={selectedDistrictId === district.id ? 2.5 : 1} style={{ pointerEvents: 'all', cursor: 'pointer' }} role="button" tabIndex={0} aria-label={`District ${district.id}, ${district.households} households, ${(district.serviceRatio * 100).toFixed(0)} percent demand served`} onClick={() => onSelectDistrict?.(district)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDistrict?.(district); } }}><title>{`${district.id}: ${district.deliveredM3h.toFixed(1)} / ${district.demandM3h.toFixed(1)} m³/h · ${district.households} households`}</title></polygon>;
       })}
       {showSegments && topology.segments.map(segment => {
             const a = statuses.get(segment.from) ?? 'offline', b = statuses.get(segment.to) ?? 'offline';
             const reading = flowReadings.get(segment.id);
-            const color = statusColors[reading?.closed ? 'isolated' : reading?.status === 'warning' ? 'warning' : rank[a] >= rank[b] ? a : b];
+            const problem = problemSegmentIds.includes(segment.id) || problemAssetIds.includes(segment.from) || problemAssetIds.includes(segment.to) || a !== 'ok' || b !== 'ok' || (reading && reading.status !== 'ok');
+            const color = problem ? '#ff6e78' : statusColors[reading?.closed ? 'isolated' : reading?.status === 'warning' ? 'warning' : rank[a] >= rank[b] ? a : b];
             const points = segment.coords.map(([lon, lat]) => { const p = point(lon, lat); return `${p.x},${p.y}`; }).join(' ');
-            return <g key={segment.id}><title>{`${segment.id}${reading ? `: ${reading.flowM3h.toFixed(1)} m³/h · ${reading.velocityMs.toFixed(2)} m/s${reading.closed ? " · CLOSED" : ""}` : ""}`}</title><polyline points={points} fill="none" stroke="#09151f" strokeWidth="9" strokeLinejoin="round"/><polyline points={points} fill="none" stroke={color} strokeWidth="4" strokeLinejoin="round" strokeDasharray={reading?.closed || a === 'offline' || b === 'offline' ? '8 6' : undefined}/>{reading && !reading.closed && Math.abs(reading.flowM3h) > .05 && <polyline points={points} fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="3 13" className={styles.flowLine} style={{ animationDirection: reading.flowM3h >= 0 ? 'normal' : 'reverse', animationDuration: `${Math.max(.5, 2.8 - Math.abs(reading.flowM3h) / 50).toFixed(3)}s` }}/>}</g>;
+            return <g key={segment.id} data-pipe={segment.id} data-problem={Boolean(problem)}><title>{`${segment.id}${reading ? `: ${reading.flowM3h.toFixed(1)} m³/h · ${reading.velocityMs.toFixed(2)} m/s${reading.closed ? " · CLOSED" : ""}` : ""}`}</title><polyline points={points} fill="none" stroke="#09151f" strokeWidth="9" strokeLinejoin="round"/><polyline points={points} fill="none" stroke={color} strokeWidth={problem ? 6 : 4} strokeLinejoin="round" strokeDasharray={reading?.closed || a === 'offline' || b === 'offline' ? '8 6' : undefined}/>{reading && !reading.closed && Math.abs(reading.flowM3h) > .05 && <polyline points={points} fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="3 13" className={styles.flowLine} style={{ animationDirection: reading.flowM3h >= 0 ? 'normal' : 'reverse', animationDuration: `${Math.max(.5, 2.8 - Math.abs(reading.flowM3h) / 50).toFixed(3)}s` }}/>}</g>;
         })}
     </svg>
     {topology.assets.filter(a => !visibleAssetIds || visibleAssetIds.includes(a.id)).map(asset => {
             const p = point(asset.lon, asset.lat), status = statuses.get(asset.id) ?? 'offline';
-            return <button key={asset.id} className={`${styles.marker} ${asset.kind === 'consumer' ? styles.consumerMarker : ''} ${selectedAssetId === asset.id ? styles.selectedMarker : ''}`} style={{ left: p.x, top: p.y, '--marker-color': statusColors[status] } as React.CSSProperties} aria-label={`${asset.name}, ${status}`} aria-pressed={selectedAssetId === asset.id} onClick={() => onSelectAsset?.(asset)}><span>{asset.kind === 'producer' ? '▣' : asset.kind === 'consumer' ? '●' : asset.kind === 'tank' ? '▣' : '◇'}</span>{(asset.kind !== 'consumer' || selectedAssetId === asset.id) && <b>{asset.id}</b>}</button>;
+            const problem = problemAssetIds.includes(asset.id) || status !== 'ok';
+            return <button key={asset.id} className={`${styles.marker} ${asset.kind === 'consumer' ? styles.consumerMarker : ''} ${problem ? styles.problemMarker : ''} ${selectedAssetId === asset.id ? styles.selectedMarker : ''}`} style={{ left: p.x, top: p.y, '--marker-color': problem ? '#ff6e78' : statusColors[status] } as React.CSSProperties} data-asset={asset.id} data-problem={problem} aria-label={`${asset.name}, ${status}${problemAssetIds.includes(asset.id) ? ", active problem" : ""}`} aria-pressed={selectedAssetId === asset.id} onClick={() => onSelectAsset?.(asset)}><span>{asset.kind === 'producer' ? '▣' : asset.kind === 'consumer' ? '●' : asset.kind === 'tank' ? '▣' : '◇'}</span>{(asset.kind !== 'consumer' || selectedAssetId === asset.id) && <b>{asset.id}</b>}</button>;
         })}
     <div className={styles.mapBadge}>GEOGRAPHIC VIEW <span>OSM / WGS 84</span></div>
     <div className={styles.mapControls}>
