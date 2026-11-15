@@ -1,0 +1,23 @@
+[Unit]
+Description=Bulwark authenticated local AI gateway
+Wants=bulwark-router.service
+After=bulwark-router.service
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+WorkingDirectory=/home/samat_zharassov/cyber-model
+EnvironmentFile=/home/samat_zharassov/cyber-model/config/environment
+ExecStart=/home/samat_zharassov/cyber-model/.venv/bin/uvicorn gateway.main:create_app --factory --host 127.0.0.1 --port 8000 --workers 1 --no-access-log --no-proxy-headers --limit-concurrency 16 --timeout-keep-alive 5
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+KillMode=control-group
+NoNewPrivileges=yes
+UMask=0077
+StandardOutput=append:/home/samat_zharassov/cyber-model/logs/gateway.log
+StandardError=append:/home/samat_zharassov/cyber-model/logs/gateway.log
+
+[Install]
+WantedBy=default.target

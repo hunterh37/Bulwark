@@ -1,0 +1,20 @@
+[Unit]
+Description=Bulwark private on-demand llama.cpp router
+StartLimitIntervalSec=300
+StartLimitBurst=3
+
+[Service]
+Type=simple
+WorkingDirectory=/home/samat_zharassov/cyber-model
+ExecStart=/home/samat_zharassov/cyber-model/scripts/router.sh
+Restart=on-failure
+RestartSec=10
+TimeoutStopSec=30
+KillMode=control-group
+NoNewPrivileges=yes
+UMask=0077
+StandardOutput=append:/home/samat_zharassov/cyber-model/logs/router.log
+StandardError=append:/home/samat_zharassov/cyber-model/logs/router.log
+
+[Install]
+WantedBy=default.target

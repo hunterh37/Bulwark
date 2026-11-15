@@ -1,0 +1,17 @@
+name: local-model-api
+on: [push, pull_request]
+jobs:
+  local-gateway:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: deploy/local-ai
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+          cache-dependency-path: deploy/local-ai/gateway/requirements.txt
+      - run: python -m pip install -r gateway/requirements.txt
+      - run: python -m pytest -q

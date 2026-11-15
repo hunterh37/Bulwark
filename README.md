@@ -38,3 +38,11 @@ Self-host and air-gapped Edge: [docs/SELF_HOST.md](docs/SELF_HOST.md). Diagram:
 
 Live: https://bulwark-cloud.onrender.com. Infrastructure: [docs/Bulwark-Infrastructure.pdf](docs/Bulwark-Infrastructure.pdf).
 Tests: `npm test` and `node test/e2e.mjs <url>` in packages/cloud.
+
+## Local Foundation-Sec model
+
+A secure on-demand GPU inference API is provided in
+[deploy/local-ai](deploy/local-ai/README.md). See the
+[API setup and team usage guide](docs/LOCAL_MODEL.md).
+This package does not change the existing cloud backend; callers must supply
+the documented Bearer Authorization header.
