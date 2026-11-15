@@ -1,0 +1,136 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Bulwark design language</title><link rel="stylesheet" href="brand.css">
+<style>
+.row{display:flex;gap:.25in;margin-top:.25in}.col{flex:1}
+.sw{flex:1;font-size:10pt;display:flex;flex-direction:column;gap:3px;color:var(--muted)}.sw div{height:1.25in;border-radius:8px;border:1px solid var(--line);margin-bottom:6px}.sw b{color:var(--fg);font-size:12pt}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:.22in}
+.btn{display:inline-block;padding:10px 18px;border-radius:6px;font-weight:700;font-size:11pt;margin:0 8px 8px 0}
+.b1{background:var(--volt);color:#000}.b2{border:1px solid var(--line);color:var(--fg)}.b3{background:var(--alert);color:#000}
+.badge{display:inline-block;font:700 9pt Menlo,monospace;letter-spacing:.08em;padding:3px 8px;border-radius:4px;margin-right:6px;text-transform:uppercase}
+table{width:100%;border-collapse:collapse;font-size:10.5pt}th,td{text-align:left;padding:8px;border-bottom:1px solid var(--line)}th{color:var(--muted);font:700 8.5pt Menlo,monospace;letter-spacing:.1em;text-transform:uppercase}
+.ic{display:flex;flex-direction:column;align-items:center;gap:8px;font-size:9.5pt;color:var(--muted);width:1.1in}
+.do{color:var(--ok);font:700 9pt Menlo,monospace}.dont{color:var(--alert);font:700 9pt Menlo,monospace}
+.type div{border-bottom:1px solid var(--line);padding:8px 0;display:flex;align-items:baseline;gap:.3in}.type span.mono{color:var(--muted);font-size:9pt;width:1.6in;flex:none}
+</style></head><body>
+
+<section class="page">
+<div class="hdr"><span class="brand"><svg width="22" height="22" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg> BULWARK</span><span>Design language v0.1</span></div>
+<div style="margin-top:1.3in"><svg width="96" height="96" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg>
+<div class="kicker" style="margin-top:.3in">Design language</div>
+<h1>Bulwark brand<br>and component library.</h1>
+<p class="lead" style="margin-top:.25in">Dark control-room surfaces, one voltage-yellow accent, mono labels like equipment tags. Calm until something is wrong.</p></div>
+<div class="foot"><span>Bulwark / Design language</span><span>01</span></div>
+</section>
+
+<section class="page">
+<div class="hdr"><span class="brand"><svg width="22" height="22" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg> BULWARK</span><span>Logo</span></div>
+<div class="kicker" style="margin-top:.35in">01 / Mark</div>
+<h2>The wall and the bolt</h2>
+<p class="lead">A battlement for defence, a bolt cut through it for the grid. The mark is always a solid fill; never outlined, rotated or recolored outside the four lockups below.</p>
+<div class="row">
+<div class="card col" style="text-align:center;padding:.4in 0"><svg width="110" height="110" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg><p class="mono" style="color:var(--muted);font-size:9pt">PRIMARY / VOLT ON INK</p></div>
+<div class="card col" style="text-align:center;padding:.4in 0;background:#F5C518"><svg width="110" height="110" viewBox="0 0 32 32"><path fill="#0B0D10" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#F5C518" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg><p class="mono" style="color:#0B0D10;font-size:9pt">INK ON VOLT</p></div>
+<div class="card col" style="text-align:center;padding:.4in 0;background:#E8EAED"><svg width="110" height="110" viewBox="0 0 32 32"><path fill="#0B0D10" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#E8EAED" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg><p class="mono" style="color:#0B0D10;font-size:9pt">PRINT / LIGHT</p></div>
+<div class="card col" style="text-align:center;padding:.4in 0"><svg width="110" height="110" viewBox="0 0 32 32"><path fill="#E8EAED" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg><p class="mono" style="color:var(--muted);font-size:9pt">MONO / INK</p></div>
+</div>
+<div class="row" style="align-items:center">
+<div class="card col" style="display:flex;align-items:center;gap:16px;padding:.3in"><svg width="56" height="56" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg><span style="font-weight:800;font-size:34pt;letter-spacing:.06em">BULWARK</span></div>
+<div class="col" style="color:var(--muted);font-size:10.5pt;line-height:1.6">Wordmark: Helvetica Neue Heavy, uppercase, +6% tracking. Clear space equals one battlement width (the mark height / 6) on all sides. Minimum size 16 px digital, 6 mm print.</div>
+</div>
+<div class="foot"><span>Bulwark / Design language</span><span>02</span></div>
+</section>
+
+<section class="page">
+<div class="hdr"><span class="brand"><svg width="22" height="22" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg> BULWARK</span><span>Color</span></div>
+<div class="kicker" style="margin-top:.35in">02 / Tokens</div>
+<h2>Ink, volt, grid</h2>
+<p class="lead">Surfaces stay near black. Volt marks the one action or the one thing that matters on screen. Status colors appear only on status.</p>
+<div class="row">
+<div class="sw"><div style="background:#0B0D10;"></div><b>Ink</b><span class="mono">#0B0D10</span><span>--ink / page</span></div>
+<div class="sw"><div style="background:#13161B;"></div><b>Panel</b><span class="mono">#13161B</span><span>--panel / cards</span></div>
+<div class="sw"><div style="background:#262B33;"></div><b>Line</b><span class="mono">#262B33</span><span>--line / borders, grid</span></div>
+<div class="sw"><div style="background:#E8EAED;"></div><b>Text</b><span class="mono">#E8EAED</span><span>--fg / body</span></div>
+<div class="sw"><div style="background:#8A919C;"></div><b>Muted</b><span class="mono">#8A919C</span><span>--muted / secondary</span></div>
+</div>
+<div class="row">
+<div class="sw"><div style="background:#F5C518;"></div><b>Volt</b><span class="mono">#F5C518</span><span>--volt / brand, primary</span></div>
+<div class="sw"><div style="background:#2EC4B6;"></div><b>Grid</b><span class="mono">#2EC4B6</span><span>--grid / healthy systems</span></div>
+<div class="sw"><div style="background:#FF5C5C;"></div><b>Alert</b><span class="mono">#FF5C5C</span><span>--alert / critical, high</span></div>
+<div class="sw"><div style="background:#FF9F1C;"></div><b>Warn</b><span class="mono">#FF9F1C</span><span>--warn / medium</span></div>
+<div class="sw"><div style="background:#3DDC84;"></div><b>OK</b><span class="mono">#3DDC84</span><span>--ok / fixed, passing</span></div>
+</div>
+<div class="foot"><span>Bulwark / Design language</span><span>03</span></div>
+</section>
+
+<section class="page">
+<div class="hdr"><span class="brand"><svg width="22" height="22" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg> BULWARK</span><span>Type</span></div>
+<div class="kicker" style="margin-top:.35in">03 / Typography</div>
+<h2>Two families</h2>
+<p class="lead">Helvetica Neue (Inter on the web) for words. Menlo (JetBrains Mono on the web) for anything a machine produced: labels, IDs, rule names, file paths.</p>
+<div class="type" style="margin-top:.2in">
+<div><span class="mono">DISPLAY 54 / 800</span><span style="font-size:44pt;font-weight:800;letter-spacing:-.02em">Grid software, defended.</span></div>
+<div><span class="mono">H2 26 / 800</span><span style="font-size:26pt;font-weight:800">Every fix passes six gates</span></div>
+<div><span class="mono">BODY 13 / 400</span><span style="font-size:13pt;color:var(--muted)">Bulwark opens a pull request only after your tests pass and the finding is gone on rescan.</span></div>
+<div><span class="mono">LABEL 10 / MONO 700</span><span class="kicker">OT SENSOR / L3.5 DMZ</span></div>
+<div><span class="mono">CODE 11 / MONO</span><span class="mono" style="font-size:11pt">ot.modbus-unauth  plant/hmi/server.py:142</span></div>
+</div>
+<div class="foot"><span>Bulwark / Design language</span><span>04</span></div>
+</section>
+
+<section class="page">
+<div class="hdr"><span class="brand"><svg width="22" height="22" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg> BULWARK</span><span>Components</span></div>
+<div class="kicker" style="margin-top:.35in">04 / Library</div>
+<h2>Components</h2>
+<div class="row">
+<div class="col">
+<p class="kicker" style="color:var(--muted)">Buttons</p>
+<span class="btn b1">Get a free scan</span><span class="btn b2">Customer portal</span><span class="btn b3">Kill switch</span>
+<p class="kicker" style="color:var(--muted);margin-top:.25in">Severity</p>
+<span class="badge" style="background:#FF5C5C;color:#000">Critical</span><span class="badge" style="border:1px solid #FF5C5C;color:#FF5C5C">High</span><span class="badge" style="border:1px solid #FF9F1C;color:#FF9F1C">Medium</span><span class="badge" style="border:1px solid #8A919C;color:#8A919C">Low</span>
+<p class="kicker" style="color:var(--muted);margin-top:.25in">Status</p>
+<span class="badge" style="border:1px solid #F5C518;color:#F5C518">Fixing</span><span class="badge" style="border:1px solid #2EC4B6;color:#2EC4B6">PR open</span><span class="badge" style="background:#3DDC84;color:#000">Fixed</span><span class="badge" style="border:1px solid #F5C518;background:#F5C518;color:#000">Grid</span>
+<div class="card" style="margin-top:.3in;border-color:#FF5C5C">
+<div class="kicker" style="color:#FF5C5C">Alert / L2 supervisory</div>
+<div style="font-size:15pt;font-weight:700;margin:6px 0">Unauthorized Modbus write to unit 3</div>
+<div style="color:var(--muted);font-size:10.5pt">Function code 06 from 10.20.4.17, not in baseline. Setpoint changed 482 to 610. MITRE ICS T0836.</div>
+</div>
+</div>
+<div class="col">
+<div class="card">
+<p class="kicker" style="color:var(--muted);margin-top:0">Findings table</p>
+<table><tr><th>Sev</th><th>Rule</th><th>Location</th><th>Status</th></tr>
+<tr><td><span class="badge" style="background:#FF5C5C;color:#000">Crit</span></td><td class="mono">secret.aws-key</td><td class="mono">api/config.ts:12</td><td><span class="badge" style="background:#3DDC84;color:#000">Fixed</span></td></tr>
+<tr><td><span class="badge" style="border:1px solid #FF5C5C;color:#FF5C5C">High</span></td><td class="mono">ot.ocpp-ws-plain</td><td class="mono">charge/ws.js:88</td><td><span class="badge" style="border:1px solid #2EC4B6;color:#2EC4B6">PR open</span></td></tr>
+<tr><td><span class="badge" style="border:1px solid #FF5C5C;color:#FF5C5C">High</span></td><td class="mono">tls.verify-disabled</td><td class="mono">hist/client.py:40</td><td><span class="badge" style="border:1px solid #F5C518;color:#F5C518">Fixing</span></td></tr>
+<tr><td><span class="badge" style="border:1px solid #FF9F1C;color:#FF9F1C">Med</span></td><td class="mono">ot.dnp3-no-sa</td><td class="mono">rtu/master.c:211</td><td class="mono" style="color:var(--muted)">open</td></tr>
+</table></div>
+<div class="row" style="margin-top:.2in">
+<div class="card col"><div class="kicker" style="color:var(--muted)">Fixed / 30d</div><div style="font-size:30pt;font-weight:800">128</div></div>
+<div class="card col"><div class="kicker" style="color:var(--muted)">Merge rate</div><div style="font-size:30pt;font-weight:800;color:#3DDC84">91%</div></div>
+<div class="card col"><div class="kicker" style="color:var(--muted)">Time to fix</div><div style="font-size:30pt;font-weight:800">4h</div></div>
+</div></div></div>
+<div class="foot"><span>Bulwark / Design language</span><span>05</span></div>
+</section>
+
+<section class="page">
+<div class="hdr"><span class="brand"><svg width="22" height="22" viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg> BULWARK</span><span>Icons and motif</span></div>
+<div class="kicker" style="margin-top:.35in">05 / Icons</div>
+<h2>Icons and grid motif</h2>
+<p class="lead">24 px grid, 1.75 px square-cap stroke, no fills, no rounded corners. Backgrounds carry a half-inch schematic grid at low contrast, like a single-line diagram.</p>
+<div class="row" style="gap:.15in">
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M5 3h12v18H5zM9 3v18"/></svg><span>Repo</span></div>
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M3 8V3h5M16 3h5v5M21 16v5h-5M8 21H3v-5M3 12h18"/></svg><span>Scan</span></div>
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M14 4l6 6-10 10H4v-6z"/></svg><span>Fix</span></div>
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M6 3v18M18 9v12M6 3a0 0 0 010 0M18 9l-4-4M18 9V5h-4"/></svg><span>PR</span></div>
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M12 12v9M7 7a7 7 0 0110 0M4 4a11 11 0 0116 0"/></svg><span>Sensor</span></div>
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M12 2v6M12 16v6M8 8h8v8H8zM8 16l8-8"/></svg><span>Breaker</span></div>
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M2 12h6M16 12h6M8 6l8 6-8 6zM16 6v12"/></svg><span>Diode</span></div>
+<div class="ic"><svg width="44" height="44" viewBox="0 0 24 24" fill="none" stroke="#E8EAED" stroke-width="1.75" stroke-linecap="square"><path d="M12 3l10 18H2zM12 10v5M12 18v1"/></svg><span>Alert</span></div>
+</div>
+<div class="row">
+<div class="card col"><span class="do">DO</span><p style="color:var(--muted);font-size:10.5pt">One volt element per view. Mono for machine output. State the fact: "Fixed in PR #212, tests green."</p></div>
+<div class="card col"><span class="dont">DON'T</span><p style="color:var(--muted);font-size:10.5pt">Shields, padlocks, hooded hackers, matrix rain, gradients on the mark, fear copy, red used for decoration.</p></div>
+<div class="card col"><span class="do">VOICE</span><p style="color:var(--muted);font-size:10.5pt">Plain, short, operator-grade. Numbers and evidence over adjectives. Written for the engineer on shift.</p></div>
+</div>
+<div class="foot"><span>Bulwark / Design language</span><span>06</span></div>
+</section>
+</body></html>
