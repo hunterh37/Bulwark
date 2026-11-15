@@ -7,6 +7,9 @@ Contents: `bulwark-runner.mjs` (single file, Node 20+, no dependencies), `Docker
 
 Verify: `sha256sum -c SHA256SUMS`
 
+Signed image: `docker pull ghcr.io/hunterh37/bulwark-runner:1.0.0` and
+`cosign verify ghcr.io/hunterh37/bulwark-runner:1.0.0 --certificate-identity-regexp 'github.com/hunterh37/Bulwark' --certificate-oidc-issuer https://token.actions.githubusercontent.com`
+
 Three ways to run:
 
 1. One-off scan: `node bulwark-runner.mjs scan /path/to/repo --offline`

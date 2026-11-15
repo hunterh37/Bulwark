@@ -1,3 +1,4 @@
+import { credentialToEnv, envImport } from "./autofix.js";
 import type { BulwarkModule } from "./types.js";
 
 /** First Bulwark module: OT and grid protocol checks for water and power operators. */
@@ -13,7 +14,8 @@ export const gridOt: BulwarkModule = {
       fix: "Bind to the OT VLAN interface only and front with Modbus/TCP Security (TLS, port 802) or a protocol-aware firewall." },
     { id: "ot.modbus-bind-all", re: /(modbus|502)[^\n]*0\.0\.0\.0|0\.0\.0\.0[^\n]*\b502\b/i, severity: "critical", grid: true,
       message: "Modbus listener bound to all interfaces",
-      fix: "Bind to a specific OT interface address, never 0.0.0.0." },
+      fix: "Bind to a specific OT interface address, never 0.0.0.0.",
+      autofix: (l) => (l.includes("0.0.0.0") ? l.replace("0.0.0.0", "127.0.0.1") : null) },
     { id: "ot.modbus-write-unchecked", re: /write_(register|coil)s?\(|writeSingle(Register|Coil)|WriteMultiple(Registers|Coils)/, severity: "medium", grid: true,
       message: "Modbus write call; confirm setpoint range checks before writing",
       fix: "Validate value against engineering limits (min, max, rate of change) before the write." },
@@ -28,16 +30,19 @@ export const gridOt: BulwarkModule = {
       fix: "Enable ACSE authentication and TLS per IEC 62351-4." },
     { id: "ot.ocpp-ws-plain", re: /ws:\/\/[^\s"'`]*/i, severity: "high", grid: true, files: /\.(js|ts|py|java|cs|go|json|ya?ml|env)$/,
       message: "Plain ws:// WebSocket (OCPP and SCADA links must use wss://)",
-      fix: "Use wss:// with OCPP Security Profile 2 or 3 (TLS plus client certificates)." },
+      fix: "Use wss:// with OCPP Security Profile 2 or 3 (TLS plus client certificates).",
+      autofix: (l) => l.replace(/ws:\/\//gi, "wss://") },
     { id: "ot.opcua-security-none", re: /SecurityPolicy[#.:\s]*None|MessageSecurityMode\.None|security_policy\s*=\s*None/i, severity: "high", grid: true,
       message: "OPC UA endpoint with SecurityPolicy None",
-      fix: "Use Basic256Sha256 with SignAndEncrypt and reject anonymous sessions." },
+      fix: "Use Basic256Sha256 with SignAndEncrypt and reject anonymous sessions.",
+      autofix: (l) => l.replace(/SecurityPolicy([#.:\s]*)None/i, "SecurityPolicy$1Basic256Sha256").replace(/MessageSecurityMode\.None/, "MessageSecurityMode.SignAndEncrypt").replace(/security_policy\s*=\s*None/i, 'security_policy = "Basic256Sha256"') },
     { id: "ot.bacnet-bind-all", re: /BAC0\.(lite|connect)\(\s*\)|bacnet[^\n]*0\.0\.0\.0/i, severity: "medium", grid: true,
       message: "BACnet stack bound to all interfaces",
       fix: "Bind to the building network interface and enable BACnet/SC where supported." },
-    { id: "ot.default-credentials", re: /(password|passwd|pwd)["']?\s*[:=]\s*["'](admin|1234|12345|password|default|scada|root|plc)["']/i, severity: "critical", grid: true,
+    { id: "ot.default-credentials", re: /(password|passwd|pwd)["']?\s*:?[:=]\s*["'](admin|1234|12345|password|default|scada|root|plc)["']/i, severity: "critical", grid: true,
       message: "Default credential in HMI, PLC or SCADA config",
-      fix: "Remove the literal; load from a vault and rotate the device password." },
+      fix: "Remove the literal; load from a vault and rotate the device password.",
+      autofix: (l, p) => credentialToEnv(l, p, /admin|1234|12345|password|default|scada|root|plc/, "OT_DEVICE_PASSWORD"), needs: envImport },
     { id: "ot.setpoint-no-limit", re: /(chlorine|dose|dosing|pump_speed|breaker|setpoint)[a-z_]*\s*=\s*(req|request|body|params|input|msg)\b/i, severity: "high", grid: true,
       message: "Process setpoint taken straight from request input",
       fix: "Clamp to engineering limits and require operator confirmation for out-of-band changes." },

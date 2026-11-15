@@ -38,7 +38,7 @@ document.querySelectorAll("[data-tab]").forEach((b) => (b.onclick = () => {
 }));
 
 // ---------- data ----------
-let ME, MODS = [];
+let ME, MODS = [], FIXABLE = new Set();
 async function refresh() {
   const s = await api("/v1/me/summary");
   const open = s.findings.filter((f) => f.status === "open");
@@ -48,13 +48,31 @@ async function refresh() {
     (s.scans.map((x) => `<tr><td>${esc(x.repo)}</td><td>${esc(x.source)}</td><td>${esc(x.status)}${x.error ? ` <span class="err">${esc(x.error)}</span>` : ""}</td><td>${x.files}</td><td>${x.findings}</td><td class="mono">${esc((x.commit || "").slice(0, 8))}</td><td>${ago(x.created_at)}</td></tr>`).join("") || "<tr><td colspan=7>No scans yet. Add a repo under GitHub.</td></tr>");
   $("#audit").innerHTML = "<tr><th>When</th><th>Actor</th><th>Action</th></tr>" + s.audit.map((a) => `<tr><td>${ago(a.at)}</td><td>${esc(a.actor)}</td><td class="mono">${esc(a.action)}</td></tr>`).join("");
   $("#findings").innerHTML = "<tr><th>Severity</th><th>Rule</th><th>Location</th><th>Detail</th><th>Status</th></tr>" +
-    (s.findings.map((f) => `<tr><td class="sev-${esc(f.severity)}">${esc(f.severity)}${f.grid_impact ? '<br><span class="tag">grid</span>' : ""}</td><td class="mono">${esc(f.rule_id)}<br><small>${esc(f.detector)}</small></td><td class="mono">${esc(f.repo)}<br>${esc(f.file)}:${f.line}</td><td>${esc(f.message)}<br><small style="color:var(--muted)">${esc(f.fix)}</small></td><td><select data-finding="${f.id}">${["open", "fixed", "ignored"].map((o) => `<option ${o === f.status ? "selected" : ""}>${o}</option>`).join("")}</select></td></tr>`).join("") || "<tr><td colspan=5>No findings.</td></tr>");
+    (s.findings.map((f) => `<tr><td class="sev-${esc(f.severity)}">${esc(f.severity)}${f.grid_impact ? '<br><span class="tag">grid</span>' : ""}</td><td class="mono">${esc(f.rule_id)}<br><small>${esc(f.detector)}</small></td><td class="mono">${esc(f.repo)}<br>${esc(f.file)}:${f.line}</td><td>${esc(f.message)}<br><small style="color:var(--muted)">${esc(f.fix)}</small></td><td>${f.pr_url ? `<a href="${esc(f.pr_url)}" target="_blank" rel="noopener">${esc(f.status)}</a>` : f.status === "fixing" ? "fixing…" : `<select data-finding="${f.id}">${["open", "fixed", "ignored"].map((o) => `<option ${o === f.status ? "selected" : ""}>${o}</option>`).join("")}</select>`}${!f.pr_url && f.status === "open" && f.commit !== "local" && FIXABLE.has(f.rule_id) ? `<br><button class="btn small" data-fix="${f.id}">Fix</button>` : ""}${f.fix_error ? `<br><small class="err">${esc(f.fix_error)}</small>` : ""}</td></tr>`).join("") || "<tr><td colspan=5>No findings.</td></tr>");
   document.querySelectorAll("[data-finding]").forEach((sel) => (sel.onchange = () => api(`/v1/me/findings/${sel.dataset.finding}`, { method: "PATCH", body: { status: sel.value } }).then(refresh)));
+  document.querySelectorAll("[data-fix]").forEach((b) => (b.onclick = () => fix(b)));
   $("#repos").innerHTML = "<tr><th>Repository</th><th></th></tr>" + (s.repos.map((r) => `<tr><td class="mono">${esc(r.full_name)}</td><td style="text-align:right"><button class="btn small" data-scan="${esc(r.full_name)}">Scan now</button> <button class="btn ghost small" data-rm="${esc(r.full_name)}">Remove</button></td></tr>`).join("") || "<tr><td colspan=2>No repositories.</td></tr>");
   document.querySelectorAll("[data-scan]").forEach((b) => (b.onclick = () => scan(b)));
   document.querySelectorAll("[data-rm]").forEach((b) => (b.onclick = () => api(`/v1/me/repos/${b.dataset.rm}`, { method: "DELETE" }).then(refresh)));
   $("#runners").innerHTML = "<tr><th>ID</th><th>Mode</th><th>Last seen</th></tr>" + (s.runners.map((r) => `<tr><td class="mono">${esc(r.id.slice(0, 8))}</td><td>${esc(r.mode)}</td><td>${ago(r.last_seen)}</td></tr>`).join("") || "<tr><td colspan=3>No runners.</td></tr>");
   return s;
+}
+
+async function fix(btn) {
+  const id = btn.dataset.fix;
+  btn.disabled = true; btn.textContent = "Checking…";
+  try {
+    const plan = await api(`/v1/me/findings/${id}/fix`, { method: "POST", body: { dryRun: true } });
+    const diff = [...plan.before.map((l) => "- " + l), ...plan.after.map((l) => "+ " + l)].join("\n");
+    if (!confirm(`Open a pull request with this verified change?\n\n${diff}`)) { btn.disabled = false; btn.textContent = "Fix"; return; }
+    await api(`/v1/me/findings/${id}/fix`, { method: "POST", body: {} });
+    for (let i = 0; i < 45; i++) {
+      await new Promise((r) => setTimeout(r, 2000));
+      const f = await api(`/v1/me/findings/${id}`);
+      if (f.status !== "fixing") break;
+    }
+  } catch (x) { alert(x.message); }
+  refresh();
 }
 
 async function scan(btn) {
@@ -90,7 +108,7 @@ $("#addRepo").onsubmit = async (e) => {
 };
 
 function renderModules() {
-  $("#modList").innerHTML = MODS.map((m) => `<label class="card check"><input type="checkbox" value="${esc(m.id)}" ${ME.org.modules.includes(m.id) ? "checked" : ""}><span><b>${esc(m.name)}</b><br><span class="mono">${esc(m.id)}@${esc(m.version)} · ${m.rules} rules</span><br><span style="color:var(--muted)">${esc(m.summary)}</span></span></label>`).join("");
+  $("#modList").innerHTML = MODS.map((m) => `<label class="card check"><input type="checkbox" value="${esc(m.id)}" ${ME.org.modules.includes(m.id) ? "checked" : ""}><span><b>${esc(m.name)}</b><br><span class="mono">${esc(m.id)}@${esc(m.version)} · ${m.analyzer ? "lockfile analyzer" : m.rules + " rules"}</span><br><span style="color:var(--muted)">${esc(m.summary)}</span></span></label>`).join("");
 }
 $("#saveMods").onclick = async () => {
   const ids = [...document.querySelectorAll("#modList input:checked")].map((i) => i.value);
@@ -124,6 +142,7 @@ async function loadMe() {
 async function boot() {
   try { await loadMe(); } catch { return showAuth(location.hash === "#signup" ? "signup" : "login"); }
   MODS = await api("/v1/modules");
+  FIXABLE = new Set(MODS.flatMap((m) => m.autofix));
   $("#auth").classList.add("hidden"); $("#app").classList.remove("hidden"); $("#logout").classList.remove("hidden");
   renderGithub(); renderModules(); await refresh();
   const tab = document.querySelector(`[data-tab="${location.hash.slice(1)}"]`);

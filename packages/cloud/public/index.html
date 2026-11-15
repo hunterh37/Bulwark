@@ -46,12 +46,12 @@ node bulwark-runner.mjs scan /srv/git/scada-hmi --offline</pre>
     <div class="card"><h3>Utility</h3><p class="stat">$49<span class="mono"> /repo/mo</span></p><p>Edge runners, audit log, SARIF export.</p></div>
     <div class="card"><h3>Enterprise</h3><p class="stat">Custom</p><p>Air-gapped kits, SSO, NERC CIP and AWIA evidence export.</p></div>
   </section>
-  <footer>Bulwark, 2026. MIT licensed. <a href="https://github.com/hunterh37/Bulwark">Source</a></footer>
+  <footer>Bulwark, 2026. MIT licensed. <a href="https://github.com/hunterh37/Bulwark">Source</a> · <a href="/privacy">Privacy</a></footer>
 </main>
 <script>
 document.querySelector("pre").textContent = document.querySelector("pre").textContent.replace("https://bulwark-cloud.onrender.com", location.origin);
 fetch("/v1/modules").then(r => r.json()).then(ms => {
-  document.getElementById("mods").innerHTML = ms.map(m => `<div class="card"><h3>${m.name}</h3><p class="mono">${m.id}@${m.version} · ${m.rules} rules</p><p>${m.summary}</p><p>${m.sectors.map(s => `<span class="tag">${s}</span>`).join("")}</p></div>`).join("");
+  document.getElementById("mods").innerHTML = ms.map(m => `<div class="card"><h3>${m.name}</h3><p class="mono">${m.id}@${m.version} · ${m.analyzer ? "lockfile analyzer" : m.rules + " rules"}</p><p>${m.summary}</p><p>${m.sectors.map(s => `<span class="tag">${s}</span>`).join("")}</p></div>`).join("");
 });
 </script>
 </body>

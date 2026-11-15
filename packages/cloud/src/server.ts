@@ -8,6 +8,9 @@ import { audit, enqueue, pool } from "./db.js";
 import { ghRepos, ghUser, verifySignature } from "./github.js";
 import { open } from "./crypto.js";
 import { storeFindings, workLoop } from "./jobs.js";
+import { planFix } from "./fix.js";
+import { getFile } from "./github.js";
+import { osvDirect } from "./modules/deps-osv.js";
 import { migrate } from "./migrate.js";
 import { catalog, DEFAULT_MODULES, MODULES } from "./modules/index.js";
 
@@ -40,12 +43,33 @@ async function sendFile(reply: FastifyReply, rel: string) {
 
 app.get("/", (_q, r) => sendFile(r, "index.html"));
 app.get("/portal", (_q, r) => sendFile(r, "portal.html"));
+app.get("/privacy", (_q, r) => sendFile(r, "privacy.html"));
 app.get("/infrastructure", (_q, r) => sendFile(r, "download/Bulwark-Infrastructure.pdf"));
 app.get<{ Params: { "*": string } }>("/assets/*", (q, r) => sendFile(r, "assets/" + q.params["*"]));
 app.get<{ Params: { "*": string } }>("/download/*", (q, r) => sendFile(r, "download/" + q.params["*"]));
 app.get("/healthz", async () => {
   await pool.query("select 1");
   return { ok: true, modules: MODULES.map((m) => `${m.id}@${m.version}`) };
+});
+
+// ---------- rate limiting (per IP, fixed window, in memory) ----------
+const hits = new Map<string, { n: number; reset: number }>();
+function limited(key: string, max: number, windowMs: number): boolean {
+  const now = Date.now();
+  const h = hits.get(key);
+  if (!h || h.reset < now) { hits.set(key, { n: 1, reset: now + windowMs }); return false; }
+  h.n += 1;
+  return h.n > max;
+}
+setInterval(() => { const now = Date.now(); for (const [k, v] of hits) if (v.reset < now) hits.delete(k); }, 60_000).unref();
+const clientIp = (req: FastifyRequest) => String(req.headers["x-forwarded-for"] ?? req.ip).split(",")[0].trim();
+
+app.addHook("onRequest", async (req, reply) => {
+  const ip = clientIp(req);
+  if (req.method === "POST" && req.url.startsWith("/v1/auth/") && limited(`auth:${ip}`, Number(process.env.AUTH_RATE ?? 20), 15 * 60_000)) {
+    return reply.code(429).send({ error: "too many attempts, retry in 15 minutes" });
+  }
+  if (req.url.startsWith("/v1/") && limited(`api:${ip}`, 600, 60_000)) return reply.code(429).send({ error: "rate limited" });
 });
 
 // ---------- accounts ----------
@@ -252,6 +276,36 @@ app.patch<{ Params: { id: string }; Body: { status?: string } }>("/v1/me/finding
   return { ok: true };
 });
 
+app.post<{ Params: { id: string }; Body: { dryRun?: boolean } }>("/v1/me/findings/:id/fix", async (req, reply) => {
+  const u = me(req);
+  const { rows } = await pool.query(
+    `select f.id, f.repo, f.file, f.line, f.rule_id, f.commit, o.modules, o.github_token_enc
+     from findings f join orgs o on o.id = f.org_id where f.id = $1 and f.org_id = $2`, [req.params.id, u.org_id]);
+  const f = rows[0];
+  if (!f) return reply.code(404).send({ error: "not found" });
+  if (req.body?.dryRun) {
+    if (f.commit === "local") return reply.code(400).send({ error: "runner findings are fixed on the Edge host" });
+    const token = f.github_token_enc ? open(f.github_token_enc) : process.env.GITHUB_TOKEN || undefined;
+    try {
+      const file = await getFile(f.repo, f.file, f.commit, token);
+      const plan = await planFix(f.file, file.content, f.rule_id, f.line, f.modules);
+      if (!plan.ok) return reply.code(422).send({ error: plan.error });
+      const { patched, ...rest } = plan;
+      return rest;
+    } catch (e) { return reply.code(502).send({ error: String((e as Error).message) }); }
+  }
+  if (!f.github_token_enc) return reply.code(400).send({ error: "connect GitHub with write access to open fix PRs" });
+  await pool.query("update findings set status = 'fixing', fix_error = null where id = $1", [f.id]);
+  await enqueue("fix", { findingId: f.id });
+  await audit(u.org_id, u.email, "fix.request", { finding: f.id, rule: f.rule_id });
+  return reply.code(202).send({ status: "fixing" });
+});
+
+app.get<{ Params: { id: string } }>("/v1/me/findings/:id", async (req, reply) => {
+  const { rows } = await pool.query("select * from findings where id = $1 and org_id = $2", [req.params.id, me(req).org_id]);
+  return rows[0] ?? reply.code(404).send({ error: "not found" });
+});
+
 app.get("/v1/me/summary", async (req) => {
   const org = me(req).org_id;
   const [repos, runners, scans, findings, auditRows] = await Promise.all([
@@ -259,7 +313,7 @@ app.get("/v1/me/summary", async (req) => {
     pool.query("select id, mode, last_seen from runners where org_id = $1 order by last_seen desc nulls last", [org]),
     pool.query(`select id, repo, commit, source, status, files, findings, error, created_at from scans
                 where org_id = $1 order by created_at desc limit 20`, [org]),
-    pool.query(`select id, repo, commit, file, line, rule_id, detector, severity, grid_impact, message, fix, status, pr_url
+    pool.query(`select id, repo, commit, file, line, rule_id, detector, severity, grid_impact, message, fix, status, pr_url, fix_error
                 from findings where org_id = $1 and scan_id in
                   (select distinct on (repo) id from scans where org_id = $1 and status = 'done' order by repo, created_at desc)
                 order by case severity when 'critical' then 0 when 'high' then 1 when 'medium' then 2 else 3 end, file, line
@@ -309,6 +363,14 @@ app.post<{ Body: { repo: string; commit?: string; files?: number; findings: any[
     await audit(r.org_id, `runner:${r.id}`, "findings.ingest", { repo, commit, count: findings.length });
     return { stored: findings.length, scan: s.rows[0].id };
   });
+
+// Dependency lookups for connected Edge runners: package names and versions only, never source.
+app.post<{ Body: { queries: any[] } }>("/v1/runner/osv", async (req, reply) => {
+  const r = await runnerFromAuth(req.headers.authorization);
+  if (!r) return reply.code(401).send({ error: "bad token" });
+  const q = Array.isArray(req.body?.queries) ? req.body.queries.slice(0, 5000) : [];
+  try { return { results: await osvDirect(q) }; } catch (e) { return reply.code(502).send({ error: String((e as Error).message) }); }
+});
 
 // ---------- GitHub App webhook ----------
 app.post("/v1/github/webhook", async (req, reply) => {

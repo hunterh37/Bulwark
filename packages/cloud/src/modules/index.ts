@@ -1,13 +1,17 @@
+import { depsOsv } from "./deps-osv.js";
 import { gridOt } from "./grid-ot.js";
 import { secretsCore } from "./secrets-core.js";
 import type { BulwarkModule } from "./types.js";
 
-export const MODULES: BulwarkModule[] = [gridOt, secretsCore];
+export const MODULES: BulwarkModule[] = [gridOt, secretsCore, depsOsv];
 export const DEFAULT_MODULES = MODULES.map((m) => m.id);
 
 /** Public catalog entry (rules as counts, regexes stay server side). */
 export function catalog() {
-  return MODULES.map(({ rules, ...m }) => ({ ...m, rules: rules.length, ruleIds: rules.map((r) => r.id) }));
+  return MODULES.map(({ rules, analyze, ...m }) => ({
+    ...m, rules: rules.length, ruleIds: rules.map((r) => r.id), autofix: rules.filter((r) => r.autofix).map((r) => r.id),
+    analyzer: !!analyze,
+  }));
 }
 
 export type { BulwarkModule };

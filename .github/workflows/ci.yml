@@ -1,12 +1,14 @@
 name: ci
 on: [push, pull_request]
 jobs:
-  check:
+  cloud:
     runs-on: ubuntu-latest
+    defaults: { run: { working-directory: packages/cloud } }
     steps:
       - uses: actions/checkout@v4
-      - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with: { node-version: 22 }
-      - run: pnpm install --frozen-lockfile=false
-      - run: pnpm lint && pnpm test
+      - run: npm ci
+      - run: npm run build
+      - run: npm test
+      - run: node eval/run.mjs

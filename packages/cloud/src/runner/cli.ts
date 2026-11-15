@@ -15,8 +15,9 @@ import { execFileSync } from "node:child_process";
 import { mkdirSync, readdirSync, readFileSync, statSync, writeFileSync } from "node:fs";
 import { basename, join, relative, resolve } from "node:path";
 import type { Detection, FileInput } from "../detect/types.js";
-import { runModules } from "../detect/rules.js";
-import { SKIP_DIR, TEXT_FILE } from "../github.js";
+import { runDetectors } from "../detect/index.js";
+import type { OsvLookup } from "../modules/types.js";
+import { maxSize, SKIP_DIR, TEXT_FILE } from "../github.js";
 import { DEFAULT_MODULES, MODULES } from "../modules/index.js";
 
 const VERSION = "1.0.0";
@@ -36,7 +37,7 @@ function walk(root: string): FileInput[] {
       if (SKIP_DIR.test(rel + "/")) continue;
       const st = statSync(full);
       if (st.isDirectory()) visit(full);
-      else if (st.size < 200_000 && TEXT_FILE.test(rel)) out.push({ path: rel, content: readFileSync(full, "utf8") });
+      else if (st.size < maxSize(rel) && TEXT_FILE.test(rel)) out.push({ path: rel, content: readFileSync(full, "utf8") });
     }
   };
   visit(root);
@@ -75,7 +76,10 @@ async function scan(dir: string) {
   let modules = process.env.BULWARK_MODULES?.split(",") ?? DEFAULT_MODULES;
   if (online && !process.env.BULWARK_MODULES) modules = (await api("/v1/runner/heartbeat", { version: VERSION })).modules;
   const files = walk(dir);
-  const found = runModules(files, modules);
+  const osv: OsvLookup | undefined = online
+    ? async (queries) => (await api("/v1/runner/osv", { queries })).results
+    : undefined;
+  const found = await runDetectors(files, modules, { osv });
   const info = gitInfo(dir);
   const repo = flag("repo") ?? info.repo;
   const outDir = flag("out") ?? "bulwark-results";
@@ -94,7 +98,7 @@ async function main() {
   const [cmd, ...rest] = args;
   const dirs = rest.filter((a, i) => !a.startsWith("--") && !rest[i - 1]?.startsWith("--"));
   if (cmd === "modules") {
-    for (const m of MODULES) console.log(`${m.id}@${m.version}  ${m.rules.length} rules  ${m.name}`);
+    for (const m of MODULES) console.log(`${m.id}@${m.version}  ${m.analyze ? "analyzer" : `${m.rules.length} rules`}  ${m.name}`);
   } else if (cmd === "scan" && dirs.length) {
     let crit = 0;
     for (const d of dirs) crit += await scan(d);

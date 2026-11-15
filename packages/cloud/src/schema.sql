@@ -84,3 +84,5 @@ create table if not exists scans (
   created_at timestamptz not null default now(),
   finished_at timestamptz
 );
+alter table findings add column if not exists fix_error text;
+alter table findings add column if not exists fix_engine text;

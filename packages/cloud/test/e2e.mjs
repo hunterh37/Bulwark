@@ -46,7 +46,7 @@ assert.equal((await call("PATCH", "/v1/me/profile", { org: "Springfield Water Au
 assert.equal((await call("GET", "/v1/me")).data.org.sector, "power"); ok("profile update");
 
 assert.equal((await call("PUT", "/v1/me/modules", { modules: ["nope"] })).status, 400);
-assert.equal((await call("PUT", "/v1/me/modules", { modules: ["grid-ot", "secrets-core"] })).status, 200); ok("modules set");
+assert.equal((await call("PUT", "/v1/me/modules", { modules: ["grid-ot", "secrets-core", "deps-osv"] })).status, 200); ok("modules set");
 
 assert.equal((await call("POST", "/v1/me/github", { token: "ghp_invalid" })).status, 400); ok("invalid GitHub token rejected");
 if (process.env.E2E_GITHUB_TOKEN) {
@@ -73,6 +73,45 @@ for (const id of ["ot.modbus-tcp-server", "ot.ocpp-ws-plain", "secret.aws-key"])
 ok(`summary findings=${sum.findings.length} grid=${sum.findings.filter((f) => f.grid_impact).length}`);
 assert.equal((await call("PATCH", `/v1/me/findings/${sum.findings[0].id}`, { status: "ignored" })).status, 200); ok("finding triage");
 
+// Private repo through the GitHub connection: scan, dependency CVEs, verified fix PR.
+if (process.env.E2E_GITHUB_TOKEN) {
+  const PRIV = process.env.E2E_PRIVATE_REPO ?? "hunterh37/bulwark-e2e-plant";
+  await call("POST", "/v1/me/repos", { repo: PRIV });
+  const ps = await call("POST", "/v1/me/scans", { repo: PRIV });
+  let st;
+  for (let i = 0; i < 60; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    st = (await call("GET", `/v1/me/scans/${ps.data.id}`)).data;
+    if (st.status === "done" || st.status === "failed") break;
+  }
+  assert.equal(st.status, "done", st.error); ok(`private scan ${PRIV} files=${st.files} findings=${st.findings}`);
+  const fs = (await call("GET", "/v1/me/summary")).data.findings.filter((f) => f.repo === PRIV);
+  assert.ok(fs.some((f) => f.rule_id.startsWith("dep.") && /requests@2\.19\.0/.test(f.message)), "deps-osv finding");
+  ok(`deps-osv advisories=${fs.filter((f) => f.rule_id.startsWith("dep.")).length}`);
+  const target = fs.find((f) => f.rule_id === "secret.aws-key");
+  const dry = await call("POST", `/v1/me/findings/${target.id}/fix`, { dryRun: true });
+  assert.equal(dry.status, 200, JSON.stringify(dry.data)); assert.ok(dry.data.verification.ruleGone);
+  ok(`fix dry run: ${dry.data.after.join(" / ")}`);
+  assert.equal((await call("POST", `/v1/me/findings/${target.id}/fix`, {})).status, 202);
+  let fx;
+  for (let i = 0; i < 45; i++) {
+    await new Promise((r) => setTimeout(r, 2000));
+    fx = (await call("GET", `/v1/me/findings/${target.id}`)).data;
+    if (fx.status !== "fixing") break;
+  }
+  assert.equal(fx.status, "pr_open", fx.fix_error); ok(`fix PR ${fx.pr_url}`);
+  // Read the PR back from GitHub, confirm the patched file, then close it and delete the branch.
+  const gh = (path, init = {}) => fetch(`https://api.github.com/repos/${PRIV}${path}`, { ...init,
+    headers: { authorization: `Bearer ${process.env.E2E_GITHUB_TOKEN}`, accept: "application/vnd.github+json", "content-type": "application/json" } });
+  const num = fx.pr_url.split("/").pop();
+  const pr = await (await gh(`/pulls/${num}`)).json();
+  const raw = await (await fetch(`https://api.github.com/repos/${PRIV}/contents/${target.file}?ref=${pr.head.ref}`, {
+    headers: { authorization: `Bearer ${process.env.E2E_GITHUB_TOKEN}`, accept: "application/vnd.github.raw" } })).text();
+  assert.ok(!raw.includes("AKIAIOSFODNN7EXAMPLE") && raw.includes("process.env.AWS_ACCESS_KEY_ID")); ok("PR branch contains verified patch");
+  await gh(`/pulls/${num}`, { method: "PATCH", body: JSON.stringify({ state: "closed" }) });
+  await gh(`/git/refs/heads/${pr.head.ref}`, { method: "DELETE" }); ok("PR closed, branch deleted");
+}
+
 // Edge runner: download, verify, scan a local checkout, report findings.
 const rn = await call("POST", "/v1/me/runners", { mode: "hybrid" });
 assert.match(rn.data.token, /^bwr_/); ok("runner token");
@@ -92,8 +131,10 @@ const on = execFileSync("node", [runner, "scan", plant, "--repo", "plant/scada-h
 assert.match(on, /sent scan/); ok(`edge connected: ${on.trim()}`);
 const after = (await call("GET", "/v1/me/summary")).data;
 assert.ok(after.runners.some((r) => r.last_seen)); assert.ok(after.findings.some((f) => f.repo === "plant/scada-hmi"));
+assert.ok(after.findings.some((f) => f.repo === "plant/scada-hmi" && f.rule_id.startsWith("dep.")), "edge deps via OSV proxy");
 ok("runner findings visible in portal");
 
+const priv = await fetch(BASE + "/privacy"); assert.equal(priv.status, 200); ok("privacy page");
 assert.equal((await call("POST", "/v1/runner/findings", { repo: "x", findings: [] }, { authorization: "Bearer bwr_bad" })).status, 401); ok("bad runner token rejected");
 assert.equal((await call("POST", "/v1/github/webhook", {}, { "x-hub-signature-256": "sha256=00" })).status, 401); ok("unsigned webhook rejected");
 await call("POST", "/v1/auth/logout"); session = "";
