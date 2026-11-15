@@ -1,0 +1,26 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#0B0D10; color:#E8EAED;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+
+    #q-grid { position:absolute; inset:0;
+      background-image:linear-gradient(#262B33 1px,transparent 1px),linear-gradient(90deg,#262B33 1px,transparent 1px);
+      background-size:96px 96px; background-position:-1px -1px; }
+    #q-shade { position:absolute; inset:0; background:radial-gradient(ellipse at 70% 30%,rgba(11,13,16,.55),rgba(11,13,16,.93) 70%); }
+    #q-line { position:absolute; left:96px; top:250px; font-weight:900; font-size:270px; line-height:.92;
+      letter-spacing:-.03em; text-transform:uppercase; }
+    #q-line .volt { color:#F5C518; }
+  </style>
+  <div id="root" data-composition-id="question" data-width="1920" data-height="1080">
+    <div id="q-grid" data-layout-ignore></div>
+    <div id="q-shade" data-layout-ignore></div>
+    <div id="q-line" class="clip" data-start="0" data-duration="1.75" data-track-index="1"><div id="q-inner"><span class="w">Who</span> <span class="w">checks</span><br><span class="w">the</span> <span class="w volt">code?</span></div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#q-line .w", {opacity:0, filter:"blur(10px)"}, {opacity:1, filter:"blur(0px)", duration:0.16, stagger:0.09, ease:"power2.out"}, 0.05);
+    tl.fromTo("#q-inner", {opacity:1, filter:"blur(0px)", scale:1}, {opacity:0, filter:"blur(14px)", scale:1.06, duration:0.2, ease:"power3.in"}, 1.55);
+    window.__timelines["question"] = tl;
+  </script>
+</template>

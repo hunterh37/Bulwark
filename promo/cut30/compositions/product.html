@@ -1,0 +1,98 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#0B0D10; color:#E8EAED;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+
+    #p-shell { position:absolute; inset:0; padding:0 80px; }
+    #p-nav { display:flex; justify-content:space-between; align-items:center; height:124px; }
+    .logo { display:flex; gap:18px; align-items:center; font:700 28px "JetBrains Mono",Menlo,monospace; letter-spacing:.2em; color:#E8EAED; }
+    .logo img { width:52px; height:52px; }
+    #p-who { font:400 28px "JetBrains Mono",Menlo,monospace; color:#E8EAED; }
+    #p-tabs { position:absolute; left:80px; right:80px; top:124px; display:flex; gap:8px; border-bottom:2px solid #262B33; }
+    #p-tabs span { color:#8A919C; padding:18px 26px; font-size:28px; border-bottom:4px solid rgba(0,0,0,0); margin-bottom:-2px; white-space:nowrap; }
+    #p-tabs span.on { color:#E8EAED; border-bottom-color:#F5C518; }
+    .p-pane { position:absolute; left:80px; right:80px; top:226px; }
+    .p-pane h2 { font-size:46px; font-weight:700; letter-spacing:-.01em; margin:18px 0 20px; }
+    table { width:100%; border-collapse:collapse; font-size:28px; line-height:1.34; }
+    th, td { text-align:left; padding:13px 12px; border-bottom:2px solid #262B33; vertical-align:top; }
+    th { color:#8A919C; font-weight:700; }
+    td.act { text-align:right; }
+    .mono { font-family:"JetBrains Mono",Menlo,monospace; font-size:28px; }
+    small { font-size:28px; color:#8A919C; }
+    .sev-critical { color:#FF5C5C; font-weight:700; } .sev-high { color:#FF9F1C; font-weight:700; } .sev-medium { color:#F5C518; }
+    .tag { display:inline-block; font:400 28px "JetBrains Mono",Menlo,monospace; padding:1px 10px; border-radius:6px; border:2px solid #262B33; color:#2EC4B6; }
+    .sel { display:inline-block; background:#07090B; border:2px solid #262B33; border-radius:8px; padding:8px 44px 8px 16px; font-size:28px; }
+    .btn { display:inline-block; position:relative; background:#F5C518; color:#0B0D10; padding:12px 22px; border-radius:8px; font-weight:700; font-size:28px; }
+    .btn.ghost { background:transparent; color:#E8EAED; border:2px solid #262B33; }
+    #p-scan-b { position:absolute; left:0; right:0; top:12px; text-align:center; opacity:0; }
+    #p-github h2 { font-size:96px; font-weight:900; letter-spacing:-.02em; margin:44px 0 40px; }
+    #p-github table { font-size:44px; }
+    #p-github th, #p-github td { padding:26px 16px; vertical-align:middle; }
+    #p-github .mono { font-size:46px; }
+    #p-github .btn { font-size:40px; padding:20px 36px; border-radius:12px; }
+    #p-github #p-scan-b { top:20px; }
+    #p-github #p-scan { min-width:300px; text-align:center; }
+    #p-cursor { position:absolute; left:0; top:0; z-index:9; overflow:visible; }
+    #p-head { position:absolute; left:80px; right:80px; bottom:66px; font-weight:900; font-size:128px; line-height:1;
+      letter-spacing:-.025em; text-transform:uppercase; }
+    #p-head .volt { color:#F5C518; }
+    .kicker { font:700 28px "JetBrains Mono",Menlo,monospace; color:#F5C518; letter-spacing:.18em; text-transform:uppercase; }
+    #p-edge { top:236px; }
+    #p-edge h1 { font-size:108px; white-space:nowrap; line-height:1.02; letter-spacing:-.02em; font-weight:900; margin:22px 0 46px; }
+    #p-edge pre { font:400 45px "JetBrains Mono",Menlo,monospace; background:#07090B; border:2px solid #262B33; border-radius:10px;
+      padding:38px 40px; margin:0; white-space:pre; }
+    #p-edge .lead { color:#8A919C; font-size:58px; margin:44px 0 0; }
+  </style>
+  <div id="root" data-composition-id="product" data-width="1920" data-height="1080">
+    <div id="p-shell">
+      <div id="p-nav"><span class="logo"><img src="assets/logo-mark.svg" alt="">BULWARK</span><span id="p-who">Springfield Water Authority</span></div>
+    </div>
+    <div id="p-tabs" class="clip" data-start="0" data-duration="7.0" data-track-index="1">
+      <span>Overview</span><span id="p-tab-findings" class="">Findings</span><span id="p-tab-github" class="on">GitHub</span><span>Modules</span><span>Edge runners</span><span>Profile</span>
+    </div>
+    <div id="p-github" class="clip p-pane" data-start="0" data-duration="2.5" data-track-index="2">
+      <h2>Repositories</h2>
+      <table><tr><th>Repository</th><th></th></tr>
+        <tr><td class="mono">springfield-water/scada-hmi</td><td class="act"><span id="p-scan" class="btn small"><span id="p-scan-a">Scan now</span><span id="p-scan-b">Scanning…</span></span> <span class="btn ghost small">Remove</span></td></tr>
+      </table>
+    </div>
+    <svg id="p-cursor" class="clip" data-start="0" data-duration="2.5" data-track-index="5" data-layout-ignore viewBox="0 0 24 24" width="96" height="96"><path id="p-cursor-shape" d="M4 2l15 9-6.5 1.6L9.2 19z" fill="#E8EAED" stroke="#0B0D10" stroke-width="1.4" stroke-linejoin="round"/></svg>
+    <div id="p-findings" class="clip p-pane" data-start="2.5" data-duration="4.5" data-track-index="3">
+      <table>
+        <tbody>
+          <tr><th style="width:200px">Severity</th><th style="width:420px">Rule</th><th style="width:420px">Location</th><th>Detail</th><th style="width:180px">Status</th></tr>
+          <tr class="r" id="p-row-0"><td class="sev-critical">critical<br><span class="tag">grid</span></td><td class="mono">ot.modbus-bind-all<br><small>grid-ot</small></td><td class="mono">scada-hmi<br>plant/hmi/server.py:142</td><td>Modbus listener bound to all interfaces</td><td><span class="sel">open</span></td></tr>
+          <tr class="r" id="p-row-1"><td class="sev-critical">critical<br><span class="tag">grid</span></td><td class="mono">ot.default-credentials<br><small>grid-ot</small></td><td class="mono">scada-hmi<br>hmi/config.yaml:7</td><td>Default credential in HMI, PLC or SCADA config</td><td><span class="sel">open</span></td></tr>
+          <tr class="r" id="p-row-2"><td class="sev-high">high<br><span class="tag">grid</span></td><td class="mono">ot.ocpp-ws-plain<br><small>grid-ot</small></td><td class="mono">scada-hmi<br>charge/ws.js:88</td><td>Plain ws:// WebSocket (OCPP and SCADA links must use wss://)</td><td><span class="sel">open</span></td></tr>
+          <tr class="r" id="p-row-3"><td class="sev-high">high<br><span class="tag">grid</span></td><td class="mono">tls.verify-disabled<br><small>secrets-core</small></td><td class="mono">scada-hmi<br>hist/client.py:40</td><td>TLS verification disabled</td><td><span class="sel">open</span></td></tr>
+          <tr class="r" id="p-row-4"><td class="sev-medium">medium<br><span class="tag">grid</span></td><td class="mono">ot.dnp3-no-sa<br><small>grid-ot</small></td><td class="mono">scada-hmi<br>rtu/master.c:211</td><td>DNP3 endpoint; confirm Secure Authentication v5 or v6 is enabled</td><td><span class="sel">open</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+    <div id="p-head" class="clip" data-start="4.95" data-duration="2.05" data-track-index="4" data-layout-allow-overlap><span class="w">Ranked</span> <span class="w">by</span> <span class="w volt">grid</span> <span class="w volt">impact</span></div>
+    <div id="p-edge" class="clip p-pane" data-start="7.0" data-duration="3.5" data-track-index="2">
+      <div id="p-edge-in">
+        <div class="kicker">Bulwark Edge</div>
+        <h1>Bulwark Edge for plant networks</h1>
+        <pre id="p-cmd"><span class="ch">n</span><span class="ch">o</span><span class="ch">d</span><span class="ch">e</span><span class="ch"> </span><span class="ch">b</span><span class="ch">u</span><span class="ch">l</span><span class="ch">w</span><span class="ch">a</span><span class="ch">r</span><span class="ch">k</span><span class="ch">-</span><span class="ch">r</span><span class="ch">u</span><span class="ch">n</span><span class="ch">n</span><span class="ch">e</span><span class="ch">r</span><span class="ch">.</span><span class="ch">m</span><span class="ch">j</span><span class="ch">s</span><span class="ch"> </span><span class="ch">s</span><span class="ch">c</span><span class="ch">a</span><span class="ch">n</span><span class="ch"> </span><span class="ch">/</span><span class="ch">s</span><span class="ch">r</span><span class="ch">v</span><span class="ch">/</span><span class="ch">g</span><span class="ch">i</span><span class="ch">t</span><span class="ch">/</span><span class="ch">s</span><span class="ch">c</span><span class="ch">a</span><span class="ch">d</span><span class="ch">a</span><span class="ch">-</span><span class="ch">h</span><span class="ch">m</span><span class="ch">i</span><span class="ch"> </span><span class="ch">-</span><span class="ch">-</span><span class="ch">o</span><span class="ch">f</span><span class="ch">f</span><span class="ch">l</span><span class="ch">i</span><span class="ch">n</span><span class="ch">e</span></pre>
+        <p class="lead">Source code never has to leave the plant.</p>
+      </div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#p-shell", {scale:1.05, opacity:0, filter:"blur(10px)"}, {scale:1, opacity:1, filter:"blur(0px)", duration:0.5, ease:"expo.out"}, 0);
+    tl.fromTo("#p-cursor", {x:1980, y:1100}, {x:1440, y:620, duration:0.75, ease:"power3.out"}, 0.35);
+    tl.fromTo("#p-cursor-shape", {scale:1, transformOrigin:"4px 2px"}, {scale:0.8, duration:0.07, yoyo:true, repeat:1, ease:"power2.out"}, 1.2);
+    tl.set("#p-scan-a", {opacity:0}, 1.27); tl.set("#p-scan-b", {opacity:1}, 1.27); tl.set("#p-scan", {opacity:0.5}, 1.27);
+    tl.set("#p-tab-github", {color:"#8A919C", borderBottomColor:"rgba(0,0,0,0)"}, 2.5); tl.set("#p-tab-findings", {color:"#E8EAED", borderBottomColor:"#F5C518"}, 2.5);
+    tl.fromTo("#p-findings tr.r", {opacity:0}, {opacity:1, duration:0.12, stagger:0.35, ease:"power2.out"}, 2.95);
+    tl.fromTo("#p-findings .tag", {opacity:0, scale:1.6}, {opacity:1, scale:1, duration:0.18, stagger:0.06, ease:"back.out(1.4)"}, 4.8500000000000005);
+    tl.fromTo("#p-head .w", {opacity:0, filter:"blur(8px)"}, {opacity:1, filter:"blur(0px)", duration:0.14, stagger:0.08, ease:"power2.out"}, 4.95);
+    tl.fromTo("#p-edge-in", {opacity:0, x:60, filter:"blur(12px)"}, {opacity:1, x:0, filter:"blur(0px)", duration:0.3, ease:"power4.out"}, 7.0);
+    tl.fromTo("#p-cmd .ch", {opacity:0}, {opacity:1, duration:0.01, stagger:0.022, ease:"none"}, 7.35);
+    tl.fromTo("#p-edge .lead", {opacity:0, filter:"blur(6px)"}, {opacity:1, filter:"blur(0px)", duration:0.2, ease:"power2.out"}, 8.15);
+    window.__timelines["product"] = tl;
+  </script>
+</template>

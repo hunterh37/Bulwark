@@ -1,0 +1,68 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#0B0D10; color:#E8EAED;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+
+    .m-shot { position:absolute; inset:0; overflow:hidden; z-index:1; }
+    .m-shot img { position:absolute; left:0; top:0; width:1920px; height:1080px; object-fit:cover; }
+    #m-scrim { position:absolute; inset:0; z-index:2;
+      background:linear-gradient(180deg, rgba(11,13,16,.55) 0%, rgba(11,13,16,0) 34%, rgba(11,13,16,0) 48%, rgba(11,13,16,.88) 100%); }
+    .m-year { position:absolute; left:96px; top:54px; z-index:3; font-weight:900; font-size:270px; line-height:1;
+      letter-spacing:-.04em; color:#F5C518; font-variant-numeric:tabular-nums; }
+    .m-line { position:absolute; left:96px; right:96px; bottom:84px; z-index:4; font-weight:900; font-size:150px;
+      line-height:.95; letter-spacing:-.025em; text-transform:uppercase; color:#E8EAED; }
+  </style>
+  <div id="root" data-composition-id="montage" data-width="1920" data-height="1080">
+    <div id="m-shot-00" class="clip m-shot" data-start="0" data-duration="1.0" data-track-index="0" data-layout-ignore><img src="assets/archive/pearl1882.jpg" alt=""></div>
+    <div id="m-shot-01" class="clip m-shot" data-start="1.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/tubes1882.jpg" alt=""></div>
+    <div id="m-shot-02" class="clip m-shot" data-start="1.5" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/switch1910.jpg" alt=""></div>
+    <div id="m-shot-03" class="clip m-shot" data-start="2.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/realines.jpg" alt=""></div>
+    <div id="m-shot-04" class="clip m-shot" data-start="2.5" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/rea.jpg" alt=""></div>
+    <div id="m-shot-05" class="clip m-shot" data-start="3.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/damyard.jpg" alt=""></div>
+    <div id="m-shot-06" class="clip m-shot" data-start="3.5" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/tower.jpg" alt=""></div>
+    <div id="m-shot-07" class="clip m-shot" data-start="4.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/wilsongen1942.jpg" alt=""></div>
+    <div id="m-shot-08" class="clip m-shot" data-start="4.5" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/stator1942.jpg" alt=""></div>
+    <div id="m-shot-09" class="clip m-shot" data-start="5.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/switchyard1942.jpg" alt=""></div>
+    <div id="m-shot-10" class="clip m-shot" data-start="5.5" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/staten1973.jpg" alt=""></div>
+    <div id="m-shot-11" class="clip m-shot" data-start="6.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/fourcorners.jpg" alt=""></div>
+    <div id="m-shot-12" class="clip m-shot" data-start="6.5" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/director.jpg" alt=""></div>
+    <div id="m-shot-13" class="clip m-shot" data-start="7.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/coulee.jpg" alt=""></div>
+    <div id="m-shot-14" class="clip m-shot" data-start="7.5" data-duration="1.0" data-track-index="0" data-layout-ignore><img src="assets/archive/before2003.jpg" alt=""></div>
+    <div id="m-shot-15" class="clip m-shot" data-start="8.5" data-duration="4.0" data-track-index="0" data-layout-ignore><img src="assets/archive/after2003.jpg" alt=""></div>
+    <div id="m-scrim" data-layout-ignore></div>
+    <div id="m-year-1882" class="clip m-year" data-start="0" data-duration="1.5" data-track-index="2">1882</div>
+    <div id="m-year-1910" class="clip m-year" data-start="1.5" data-duration="0.5" data-track-index="2">1910</div>
+    <div id="m-year-1942" class="clip m-year" data-start="4.0" data-duration="1.5" data-track-index="2">1942</div>
+    <div id="m-year-1973" class="clip m-year" data-start="5.5" data-duration="0.5" data-track-index="2">1973</div>
+    <div id="m-year-2003" class="clip m-year" data-start="7.5" data-duration="5.0" data-track-index="2">2003</div>
+    <div id="m-line-0" class="clip m-line" data-start="0.5" data-duration="3.5" data-track-index="3"><span class="w">We</span> <span class="w">built</span> <span class="w">the</span> <span class="w">grid</span></div>
+    <div id="m-line-1" class="clip m-line" data-start="5.5" data-duration="2.0" data-track-index="3"><span class="w">Then</span> <span class="w">we</span> <span class="w">put</span> <span class="w">it</span> <span class="w">online</span></div>
+    <div id="m-line-2" class="clip m-line" data-start="8.6" data-duration="1.9" data-track-index="3"><span class="w">50</span> <span class="w">million</span> <span class="w">people</span> <span class="w">lose</span> <span class="w">power</span></div>
+    <div id="m-line-3" class="clip m-line" data-start="10.5" data-duration="2.0" data-track-index="3"><span class="w">A</span> <span class="w">software</span> <span class="w">bug</span> <span class="w">silenced</span> <span class="w">the</span> <span class="w">alarms</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#m-shot-00 img", {scale:1.03}, {scale:1.060, duration:1.0, ease:"none"}, 0);
+    tl.fromTo("#m-shot-01 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 1.0);
+    tl.fromTo("#m-shot-02 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 1.5);
+    tl.fromTo("#m-shot-03 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 2.0);
+    tl.fromTo("#m-shot-04 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 2.5);
+    tl.fromTo("#m-shot-05 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 3.0);
+    tl.fromTo("#m-shot-06 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 3.5);
+    tl.fromTo("#m-shot-07 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 4.0);
+    tl.fromTo("#m-shot-08 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 4.5);
+    tl.fromTo("#m-shot-09 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 5.0);
+    tl.fromTo("#m-shot-10 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 5.5);
+    tl.fromTo("#m-shot-11 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 6.0);
+    tl.fromTo("#m-shot-12 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 6.5);
+    tl.fromTo("#m-shot-13 img", {scale:1.03}, {scale:1.045, duration:0.5, ease:"none"}, 7.0);
+    tl.fromTo("#m-shot-14 img", {scale:1.03}, {scale:1.060, duration:1.0, ease:"none"}, 7.5);
+    tl.fromTo("#m-shot-15 img", {scale:1.03}, {scale:1.110, duration:4.0, ease:"none"}, 8.5);
+    tl.fromTo("#m-line-0 .w", {opacity:0, filter:"blur(6px)"}, {opacity:1, filter:"blur(0px)", duration:0.13, stagger:0.067, ease:"power2.out"}, 0.5);
+    tl.fromTo("#m-line-1 .w", {opacity:0, filter:"blur(6px)"}, {opacity:1, filter:"blur(0px)", duration:0.13, stagger:0.067, ease:"power2.out"}, 5.5);
+    tl.fromTo("#m-line-2 .w", {opacity:0, filter:"blur(6px)"}, {opacity:1, filter:"blur(0px)", duration:0.13, stagger:0.067, ease:"power2.out"}, 8.6);
+    tl.fromTo("#m-line-3 .w", {opacity:0, filter:"blur(6px)"}, {opacity:1, filter:"blur(0px)", duration:0.13, stagger:0.067, ease:"power2.out"}, 10.5);
+    window.__timelines["montage"] = tl;
+  </script>
+</template>
