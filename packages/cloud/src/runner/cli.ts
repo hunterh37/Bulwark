@@ -44,7 +44,7 @@ function walk(root: string): FileInput[] {
 }
 
 function gitInfo(dir: string) {
-  const git = (...a: string[]) => { try { return execFileSync("git", ["-C", dir, ...a], { encoding: "utf8" }).trim(); } catch { return ""; } };
+  const git = (...a: string[]) => { try { return execFileSync("git", ["-C", dir, ...a], { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] }).trim(); } catch { return ""; } };
   const remote = git("config", "--get", "remote.origin.url").replace(/^.*github\.com[:/]/, "").replace(/\.git$/, "");
   return { commit: git("rev-parse", "HEAD") || "local", repo: remote || basename(resolve(dir)) };
 }

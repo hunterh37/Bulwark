@@ -1,0 +1,203 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><title>Bulwark Infrastructure</title>
+<style>
+@page { size: Letter; margin: .6in .65in; }
+:root { --ink:#0B0D10; --line:#D5D9DE; --muted:#5B636E; --volt:#B98F00; --grid:#1A8C82; }
+* { box-sizing:border-box; -webkit-print-color-adjust:exact; print-color-adjust:exact; }
+body { font:10.5pt/1.5 "Helvetica Neue",Helvetica,Arial,sans-serif; color:var(--ink); margin:0; }
+h1 { font-size:34pt; margin:0 0 6pt; letter-spacing:-.02em; }
+h2 { font-size:16pt; margin:22pt 0 6pt; padding-top:6pt; border-top:2px solid var(--ink); page-break-after:avoid; }
+h3 { font-size:11.5pt; margin:12pt 0 4pt; page-break-after:avoid; }
+p { margin:0 0 7pt; }
+.kicker { font:700 9pt Menlo,monospace; letter-spacing:.18em; color:var(--volt); text-transform:uppercase; }
+.lead { font-size:13pt; color:var(--muted); max-width:6.4in; }
+table { width:100%; border-collapse:collapse; margin:6pt 0 10pt; font-size:9.5pt; page-break-inside:avoid; }
+th,td { text-align:left; padding:4pt 6pt; border-bottom:1px solid var(--line); vertical-align:top; }
+th { background:#F1F3F5; }
+code, pre, .mono { font-family:Menlo,monospace; font-size:8.8pt; }
+pre { background:#F4F5F7; border:1px solid var(--line); padding:8pt; white-space:pre-wrap; page-break-inside:avoid; }
+.cover { height:9.6in; display:flex; flex-direction:column; justify-content:space-between; page-break-after:always; }
+.brand { display:flex; gap:10px; align-items:center; font:700 12pt Menlo,monospace; letter-spacing:.2em; }
+svg { width:100%; height:auto; page-break-inside:avoid; }
+svg text { font-family:"Helvetica Neue",Helvetica,Arial,sans-serif; }
+.pb { page-break-before:always; }
+</style></head><body>
+
+<section class="cover">
+  <div class="brand"><img src="../brand/logo-mark.svg" width="34" height="34" alt="">BULWARK</div>
+  <div>
+    <div class="kicker">Infrastructure reference · v1.0 · November 2026</div>
+    <h1>Bulwark infrastructure</h1>
+    <p class="lead">How Bulwark Cloud runs on Render, how accounts, GitHub and modules work, and how water and power operators deploy Bulwark Edge inside their own networks, connected or air-gapped.</p>
+  </div>
+  <table>
+    <tr><th>Production URL</th><td class="mono">https://bulwark-cloud.onrender.com</td></tr>
+    <tr><th>Source</th><td class="mono">github.com/hunterh37/Bulwark</td></tr>
+    <tr><th>Edge kit</th><td class="mono">/download/bulwark-edge-1.0.0.tar.gz</td></tr>
+    <tr><th>First module</th><td class="mono">grid-ot@1.0.0 (11 rules)</td></tr>
+  </table>
+</section>
+
+<h2>1. System overview</h2>
+<p>Bulwark has two runtimes that share one detection engine. Bulwark Cloud is a hosted service on Render: landing page, customer portal, account backend, API, job queue and cloud scanner. Bulwark Edge is a single-file runner that utilities install on their own hosts. Both load the same versioned modules, so a finding has the same rule ID, severity and remediation wherever it was produced.</p>
+<svg viewBox="0 0 720 300" xmlns="http://www.w3.org/2000/svg">
+  <defs><marker id="a" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#0B0D10"/></marker></defs>
+  <rect x="10" y="10" width="330" height="280" fill="#F7F8FA" stroke="#0B0D10"/>
+  <text x="22" y="32" font-weight="700" font-size="13">Render (Oregon)</text>
+  <rect x="30" y="50" width="290" height="120" fill="#fff" stroke="#0B0D10"/>
+  <text x="42" y="70" font-weight="700" font-size="12">bulwark-cloud (web service, Node 22)</text>
+  <text x="42" y="90" font-size="11">Landing page and portal (static)</text>
+  <text x="42" y="106" font-size="11">Accounts, sessions, profile API</text>
+  <text x="42" y="122" font-size="11">GitHub connect, repos, scans, findings</text>
+  <text x="42" y="138" font-size="11">Runner API, downloads, webhook</text>
+  <text x="42" y="154" font-size="11">In-process job worker (SKIP LOCKED)</text>
+  <rect x="30" y="200" width="290" height="70" fill="#fff" stroke="#0B0D10"/>
+  <text x="42" y="222" font-weight="700" font-size="12">bulwark-db (Render Postgres 16)</text>
+  <text x="42" y="242" font-size="11">orgs, users, sessions, repos, scans,</text>
+  <text x="42" y="258" font-size="11">findings, runners, jobs, audit_log</text>
+  <line x1="175" y1="170" x2="175" y2="198" stroke="#0B0D10" marker-end="url(#a)"/>
+  <rect x="400" y="10" width="310" height="80" fill="#fff" stroke="#0B0D10"/>
+  <text x="412" y="32" font-weight="700" font-size="12">Operators (browser)</text>
+  <text x="412" y="52" font-size="11">Sign up, profile, modules, findings</text>
+  <text x="412" y="68" font-size="11">Download Edge kit, create runner token</text>
+  <rect x="400" y="110" width="310" height="60" fill="#fff" stroke="#0B0D10"/>
+  <text x="412" y="132" font-weight="700" font-size="12">GitHub API</text>
+  <text x="412" y="152" font-size="11">Repo tree and file reads, user repos</text>
+  <rect x="400" y="190" width="310" height="100" fill="#EAF6F5" stroke="#1A8C82"/>
+  <text x="412" y="212" font-weight="700" font-size="12">Utility network (Bulwark Edge)</text>
+  <text x="412" y="232" font-size="11">Runner next to on-prem Git or SCADA repos</text>
+  <text x="412" y="248" font-size="11">Outbound 443 only: heartbeat and findings</text>
+  <text x="412" y="264" font-size="11">Air-gapped: JSON and SARIF to local disk</text>
+  <line x1="400" y1="50" x2="322" y2="90" stroke="#0B0D10" marker-end="url(#a)"/>
+  <line x1="322" y1="130" x2="398" y2="140" stroke="#0B0D10" marker-end="url(#a)"/>
+  <line x1="400" y1="240" x2="322" y2="150" stroke="#1A8C82" stroke-dasharray="4 3" marker-end="url(#a)"/>
+</svg>
+
+<h2>2. Render deployment</h2>
+<p>All hosted pieces are defined in <code>render.yaml</code> at the repo root and live in one Render project, <b>Bulwark</b>, in the RealityFilter workspace. The web service builds from <code>packages/cloud</code> on every push to <code>main</code>.</p>
+<table>
+  <tr><th>Resource</th><th>Type</th><th>Build and start</th><th>Notes</th></tr>
+  <tr><td class="mono">bulwark-cloud</td><td>Web service, Node</td><td class="mono">npm ci &amp;&amp; npm run build<br>npm start</td><td>Health check <code>/healthz</code> runs <code>select 1</code>. Migrations run at boot and are idempotent.</td></tr>
+  <tr><td class="mono">bulwark-db</td><td>Render Postgres 16</td><td>managed</td><td>Internal connection string, no public ingress needed.</td></tr>
+</table>
+<h3>Environment</h3>
+<table>
+  <tr><th>Variable</th><th>Purpose</th></tr>
+  <tr><td class="mono">DATABASE_URL</td><td>Postgres internal connection string, injected from bulwark-db.</td></tr>
+  <tr><td class="mono">SECRET_KEY</td><td>Generated by Render. Derives the AES-256-GCM key that seals stored GitHub tokens.</td></tr>
+  <tr><td class="mono">NODE_ENV=production</td><td>Marks session cookies <code>Secure</code>.</td></tr>
+  <tr><td class="mono">GITHUB_CLIENT_ID / SECRET</td><td>Optional. Enables the one-click GitHub OAuth button. Without them, users connect with a fine-grained token.</td></tr>
+  <tr><td class="mono">GITHUB_WEBHOOK_SECRET</td><td>Optional. Verifies <code>/v1/github/webhook</code> push events (HMAC SHA-256) for scan-on-push.</td></tr>
+  <tr><td class="mono">MODEL_URL</td><td>Optional. Private service that hosts Bulwark detection models.</td></tr>
+  <tr><td class="mono">INLINE_WORKER</td><td>Default on. Set <code>false</code> when a separate <code>npm run worker</code> background worker is added.</td></tr>
+</table>
+<h3>Scaling path</h3>
+<p>The job queue is a Postgres table claimed with <code>FOR UPDATE SKIP LOCKED</code>, so the same code runs as the inline loop today and as N background workers later without changes. Moving from the inline worker to a dedicated Render worker is a render.yaml change plus <code>INLINE_WORKER=false</code>.</p>
+
+<h2 class="pb">3. Accounts and the customer portal</h2>
+<p>Signup creates an organization and its first user in one request. Passwords are hashed with scrypt (16-byte salt, 32-byte key). Sessions are random 192-bit tokens; only their SHA-256 hash is stored, with a 30-day expiry. The browser holds the token in an <code>HttpOnly; SameSite=Lax; Secure</code> cookie, and API clients can send it as a bearer token. Every state change writes an <code>audit_log</code> row, shown in the portal.</p>
+<table>
+  <tr><th>Portal tab</th><th>What it does</th><th>API</th></tr>
+  <tr><td>Overview</td><td>Repo, finding, grid-impact and runner counts; recent scans; audit log</td><td class="mono">GET /v1/me/summary</td></tr>
+  <tr><td>Findings</td><td>Ranked by severity, with rule, file:line, message, remediation; triage open, fixed, ignored</td><td class="mono">PATCH /v1/me/findings/:id</td></tr>
+  <tr><td>GitHub</td><td>Connect via OAuth or fine-grained token, list repos, add repos, scan now</td><td class="mono">POST /v1/me/github, /repos, /scans</td></tr>
+  <tr><td>Modules</td><td>Enable or disable detector packs for the org</td><td class="mono">PUT /v1/me/modules</td></tr>
+  <tr><td>Edge runners</td><td>Download the kit, create a runner token (shown once), see last heartbeat</td><td class="mono">POST /v1/me/runners</td></tr>
+  <tr><td>Profile</td><td>Name, organization, sector (power, water, EV charging, building, oil and gas)</td><td class="mono">PATCH /v1/me/profile</td></tr>
+</table>
+
+<h2>4. GitHub connection</h2>
+<p>Two paths reach the same stored credential. With a GitHub OAuth App configured, <b>Connect with GitHub</b> runs the OAuth web flow with a state cookie and <code>repo read:user</code> scope. Without one, the user pastes a fine-grained personal access token limited to <i>Contents: read</i> and <i>Metadata: read</i> on chosen repos. Bulwark validates the token against <code>GET /user</code> before saving it, then seals it with AES-256-GCM. Public repositories scan with no credential.</p>
+<p>A cloud scan resolves the ref to a commit SHA, reads the recursive tree, selects up to 400 source and config files under 200 KB (skipping vendor, node_modules, build output), fetches them in batches of 16, runs the org's modules, and stores findings tied to the scan and commit. Files are held in memory for the scan only and never written to disk or the database.</p>
+
+<h2>5. Modules</h2>
+<p>A module is a versioned detector pack: an ID, version, sectors and a list of rules, each with a pattern, severity, message, remediation and a grid-impact flag. Orgs choose which modules run. Edge runners fetch the org's module list on each heartbeat, so a change in the portal reaches every runner on the next cycle.</p>
+<table>
+  <tr><th>Module</th><th>Rules</th><th>Covers</th></tr>
+  <tr><td class="mono">grid-ot@1.0.0</td><td>11</td><td>Modbus TCP exposure, Modbus bound to 0.0.0.0, unchecked Modbus writes, DNP3 without Secure Authentication, IEC 60870-5-104 without IEC 62351-3 TLS, IEC 61850 MMS without IEC 62351-4, plain ws:// OCPP and SCADA links, OPC UA SecurityPolicy None, BACnet bound to all interfaces, default HMI/PLC credentials, process setpoints (chlorine dose, pump speed, breaker) taken straight from request input</td></tr>
+  <tr><td class="mono">secrets-core@1.0.0</td><td>5</td><td>AWS keys, private keys, GitHub tokens, Slack tokens, disabled TLS verification</td></tr>
+</table>
+<p>New modules are added in <code>packages/cloud/src/modules/</code> and registered in <code>modules/index.ts</code>. The catalog is public at <code>GET /v1/modules</code>; patterns stay server side and inside the signed runner bundle.</p>
+
+<h2 class="pb">6. Bulwark Edge: running inside a utility network</h2>
+<p>Water and power operators usually cannot send SCADA, HMI or PLC tooling source to a SaaS. Bulwark Edge is built for that constraint. The runner is one ES module file (about 11 KB) with no npm dependencies, runnable on any host with Node 20 or later. It walks local Git checkouts, runs modules, writes JSON and SARIF, and, only in connected mode, posts findings (rule, file, line, severity, message) to Bulwark Cloud. Source code never leaves the host in either mode.</p>
+<h3>What the operator downloads</h3>
+<table>
+  <tr><th>Artifact</th><th>Use</th></tr>
+  <tr><td class="mono">bulwark-edge-1.0.0.tar.gz</td><td>Full kit: runner, Dockerfile, docker-compose.yml, systemd install.sh, README, SHA256SUMS</td></tr>
+  <tr><td class="mono">bulwark-runner.mjs</td><td>Runner only, for jump hosts and CI</td></tr>
+  <tr><td class="mono">SHA256SUMS.txt</td><td>Checksums for both, for change-control records</td></tr>
+</table>
+<h3>Packaging formats and where each fits</h3>
+<table>
+  <tr><th>Format</th><th>Target environment</th><th>Notes</th></tr>
+  <tr><td>Single-file Node runner</td><td>Engineering workstation, jump host, CI job (GitLab, Jenkins, Azure DevOps on-prem)</td><td><code>--fail-on-critical</code> exits 2 to gate merges. SARIF imports into GitHub code scanning, GitLab and DefectDojo.</td></tr>
+  <tr><td>Docker image + compose</td><td>IT/OT DMZ host next to the on-prem Git server</td><td>Read-only root FS, all capabilities dropped, no-new-privileges, repos mounted read-only. <code>NETWORK_MODE=none</code> for air-gapped.</td></tr>
+  <tr><td>systemd service</td><td>Hardened RHEL or Ubuntu host without Docker</td><td>Dedicated <code>bulwark</code> user, <code>ProtectSystem=strict</code>, token in a 0600 env file.</td></tr>
+  <tr><td>Offline image tarball</td><td>Air-gapped enclave (Purdue levels 2 and 3)</td><td><code>docker save</code> on a connected host, move by approved media, <code>docker load</code> inside, verify SHA-256.</td></tr>
+  <tr><td>Helm chart, Terraform module (roadmap)</td><td>Utilities with on-prem Kubernetes or cloud tenancy</td><td>Placeholders in <code>deploy/helm</code> and <code>deploy/terraform-modules</code>.</td></tr>
+</table>
+<h3>Deployment modes</h3>
+<table>
+  <tr><th>Mode</th><th>Network</th><th>Data leaving the site</th></tr>
+  <tr><td>Connected</td><td>Outbound HTTPS 443 to the Bulwark Cloud host only. No inbound ports.</td><td>Heartbeat, findings metadata</td></tr>
+  <tr><td>Air-gapped</td><td>None</td><td>Nothing. JSON and SARIF stay on disk for local review or transfer by approved media.</td></tr>
+  <tr><td>CI gate</td><td>Whatever the CI runner has</td><td>Optional, same as connected</td></tr>
+</table>
+<h3>Quick start</h3>
+<pre>curl -O https://bulwark-cloud.onrender.com/download/bulwark-edge-1.0.0.tar.gz
+tar xzf bulwark-edge-1.0.0.tar.gz &amp;&amp; cd bulwark-edge &amp;&amp; sha256sum -c SHA256SUMS
+
+# air-gapped one-off scan
+node bulwark-runner.mjs scan /srv/git/scada-hmi --offline
+
+# connected service (token from Portal > Edge runners)
+export BULWARK_URL=https://bulwark-cloud.onrender.com BULWARK_TOKEN=bwr_...
+REPOS_DIR=/srv/git docker compose up -d
+
+# systemd
+sudo BULWARK_URL=... BULWARK_TOKEN=... REPOS="/srv/git/scada /srv/git/hmi" ./install.sh</pre>
+
+<h2 class="pb">7. Security model</h2>
+<table>
+  <tr><th>Asset</th><th>Control</th></tr>
+  <tr><td>Passwords</td><td>scrypt with per-user salt; constant-time compare</td></tr>
+  <tr><td>Sessions</td><td>192-bit random tokens, SHA-256 at rest, 30-day expiry, HttpOnly Secure SameSite=Lax cookie, server-side logout</td></tr>
+  <tr><td>GitHub tokens</td><td>AES-256-GCM sealed with a key derived from <code>SECRET_KEY</code>; never returned by the API</td></tr>
+  <tr><td>Runner tokens</td><td><code>bwr_</code> prefix, 192-bit, shown once, SHA-256 at rest; scoped to one org</td></tr>
+  <tr><td>Source code</td><td>Cloud: in memory per scan, never persisted. Edge: never transmitted.</td></tr>
+  <tr><td>Webhooks</td><td>HMAC SHA-256 signature check with timing-safe compare; unsigned requests rejected</td></tr>
+  <tr><td>Tenant isolation</td><td>Every <code>/v1/me</code> query filters on the session's <code>org_id</code></td></tr>
+  <tr><td>Audit</td><td>Account, session, profile, module, GitHub, repo, scan, runner and ingest events in <code>audit_log</code></td></tr>
+</table>
+<h3>Compliance mapping</h3>
+<table>
+  <tr><th>Framework</th><th>Requirement</th><th>Bulwark evidence</th></tr>
+  <tr><td>NERC CIP-007-6 R2</td><td>Security patch management</td><td>Dependency and secret findings with commit and date</td></tr>
+  <tr><td>NERC CIP-010-4 R1</td><td>Configuration change management</td><td>Scan per commit, audit log</td></tr>
+  <tr><td>NERC CIP-005-7</td><td>Electronic security perimeter</td><td>Edge needs no inbound ports; air-gapped mode needs no network</td></tr>
+  <tr><td>AWIA 2018 s.2013</td><td>Water system risk and resilience assessment</td><td>Grid-impact findings on SCADA and dosing code, SARIF export</td></tr>
+  <tr><td>IEC 62443-4-1 SVV-3</td><td>Vulnerability testing</td><td>Repeatable module scans in CI with exit-code gating</td></tr>
+  <tr><td>IEC 62351-3/4, DNP3-SA</td><td>Protocol security</td><td>grid-ot rules flag links missing these controls</td></tr>
+</table>
+
+<h2>8. Data model</h2>
+<table>
+  <tr><th>Table</th><th>Key columns</th></tr>
+  <tr><td class="mono">orgs</td><td>id, name, sector, plan, modules[], github_login, github_token_enc</td></tr>
+  <tr><td class="mono">users</td><td>id, email (unique), name, pw_hash, org_id</td></tr>
+  <tr><td class="mono">sessions</td><td>token_hash, user_id, expires_at</td></tr>
+  <tr><td class="mono">repos</td><td>org_id, full_name (unique per org), installation_id</td></tr>
+  <tr><td class="mono">scans</td><td>id, org_id, repo, commit, source (cloud or runner), status, files, findings, error</td></tr>
+  <tr><td class="mono">findings</td><td>scan_id, repo, commit, detector, rule_id, file, line, severity, grid_impact, message, fix, status</td></tr>
+  <tr><td class="mono">runners</td><td>id, org_id, token_hash, mode, last_seen</td></tr>
+  <tr><td class="mono">jobs</td><td>kind, payload, status, attempts, run_after (retry with quadratic backoff, dead after 3)</td></tr>
+  <tr><td class="mono">audit_log</td><td>org_id, actor, action, detail, at</td></tr>
+</table>
+
+<h2>9. Testing</h2>
+<p>Unit tests (<code>npm test</code>) run the modules against <code>examples/vulnerable-plant</code>, an intentionally vulnerable pump station and EV charger fixture. The end-to-end suite (<code>node test/e2e.mjs &lt;url&gt;</code>) runs against the live deployment: health, pages and downloads, signup, duplicate and bad-password rejection, login, profile update, module selection, invalid GitHub token rejection, repo add, a cloud scan of this repository with expected Modbus, OCPP and AWS-key findings, finding triage, runner token creation, Edge kit download and checksum, an air-gapped scan producing SARIF, a connected scan whose findings appear in the portal, bad runner token and unsigned webhook rejection, and logout.</p>
+
+<h2>10. Roadmap</h2>
+<p>Fix pipeline: patch generation, customer tests in a sandbox, pull request only when tests pass and the finding is gone. GitHub App installation tokens in place of user tokens. Dependency module (OSV) and Semgrep and gitleaks adapters as modules. Signed runner releases (Sigstore) and an offline module update bundle. Helm chart and Terraform module. SSO and NERC CIP evidence export.</p>
+</body></html>

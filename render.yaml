@@ -1,54 +1,35 @@
-# Render Blueprint: landing page + portal, Bulwark Cloud API, worker, Postgres.
+# Render Blueprint: Bulwark Cloud (landing page, portal, API, job worker) + Postgres.
 services:
   - type: web
-    name: bulwark-web
+    name: bulwark-cloud
     runtime: node
-    rootDir: apps/web
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - key: CLOUD_API_URL
-        sync: false   # set to the bulwark-cloud-api URL after first deploy
-      - fromGroup: bulwark-secrets
-      - key: GITHUB_APP_SLUG
-        value: bulwark-security
-
-  - type: web
-    name: bulwark-cloud-api
-    runtime: node
+    plan: free
+    region: oregon
     rootDir: packages/cloud
-    buildCommand: npm install && npm run build
-    preDeployCommand: npm run migrate
+    buildCommand: npm ci && npm run build
     startCommand: npm start
     healthCheckPath: /healthz
+    autoDeploy: true
     envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "22"
       - key: DATABASE_URL
         fromDatabase: { name: bulwark-db, property: connectionString }
       - key: DATABASE_SSL
-        value: "false"   # internal Render network
-      - fromGroup: bulwark-secrets
-
-  - type: worker
-    name: bulwark-cloud-worker
-    runtime: node
-    rootDir: packages/cloud
-    buildCommand: npm install && npm run build
-    startCommand: npm run worker
-    envVars:
-      - key: DATABASE_URL
-        fromDatabase: { name: bulwark-db, property: connectionString }
-      - key: DATABASE_SSL
-        value: "false"   # internal Render network
-      - fromGroup: bulwark-secrets
+        value: "false"
+      - key: SECRET_KEY
+        generateValue: true
+      - key: GITHUB_CLIENT_ID
+        sync: false
+      - key: GITHUB_CLIENT_SECRET
+        sync: false
+      - key: GITHUB_WEBHOOK_SECRET
+        sync: false
 
 databases:
   - name: bulwark-db
-    plan: basic-256mb
-
-envVarGroups:
-  - name: bulwark-secrets
-    envVars:
-      - key: PORTAL_KEY
-        generateValue: true
-      - key: GITHUB_WEBHOOK_SECRET
-        sync: false
+    plan: free
+    region: oregon
+    databaseName: bulwark
