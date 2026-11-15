@@ -1,0 +1,38 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#0B0D10; color:#E8EAED;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    .p-vid { position:absolute; left:0; top:0; width:1920px; height:1080px; z-index:1; }
+    .p-cap { position:absolute; left:72px; bottom:64px; z-index:5; background:#F5C518; color:#0B0D10; padding:14px 30px 16px;
+      font-weight:900; font-size:92px; line-height:1; letter-spacing:-.02em; text-transform:uppercase; }
+    .p-step { position:absolute; right:72px; top:64px; z-index:5; font:700 34px "JetBrains Mono",Menlo,monospace; letter-spacing:.14em;
+      color:#F5C518; background:#0B0D10; padding:12px 18px; border:2px solid #F5C518; }
+  </style>
+  <div id="root" data-composition-id="product" data-width="1920" data-height="1080">
+    <video id="p-scan-a" class="clip p-vid" muted playsinline src="assets/footage/scan-a.mp4" data-start="0" data-duration="2.0" data-track-index="0" data-layout-ignore></video>
+    <video id="p-scan-b" class="clip p-vid" muted playsinline src="assets/footage/scan-b.mp4" data-start="2.0" data-duration="3.0" data-track-index="0" data-layout-ignore></video>
+    <video id="p-fix-a" class="clip p-vid" muted playsinline src="assets/footage/fix-a.mp4" data-start="5.0" data-duration="3.0" data-track-index="0" data-layout-ignore></video>
+    <video id="p-fix-b" class="clip p-vid" muted playsinline src="assets/footage/fix-b.mp4" data-start="8.0" data-duration="3.0" data-track-index="0" data-layout-ignore></video>
+
+    <div id="p-cap-0" class="clip p-cap" data-start="0.1" data-duration="1.9" data-track-index="2" data-layout-allow-overlap>Scan</div>
+    <div id="p-cap-1" class="clip p-cap" data-start="2.1" data-duration="2.9" data-track-index="2" data-layout-allow-overlap>Ranked by grid impact</div>
+    <div id="p-cap-2" class="clip p-cap" data-start="5.1" data-duration="2.9" data-track-index="2" data-layout-allow-overlap>Patch. Rescan.</div>
+    <div id="p-cap-3" class="clip p-cap" data-start="8.1" data-duration="2.9" data-track-index="2" data-layout-allow-overlap>Pull request open</div>
+    <div id="p-step" class="clip p-step" data-start="0.1" data-duration="10.9" data-track-index="3" data-layout-allow-overlap>REAL PRODUCT FOOTAGE</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // Punch-ins toward the control the cursor uses. Origins are footage pixels.
+    tl.fromTo("#p-scan-a", { scale: 1, transformOrigin: "1500px 1040px" }, { scale: 1.2, duration: 0.5, ease: "power3.inOut" }, 0.15);
+    tl.fromTo("#p-scan-b", { scale: 1.18, transformOrigin: "960px 0px" }, { scale: 1.26, duration: 3.0, ease: "none" }, 2.0);
+    tl.fromTo("#p-fix-a", { scale: 1, transformOrigin: "960px 520px" }, { scale: 1.38, duration: 0.5, ease: "power3.inOut" }, 5.75);
+    tl.fromTo("#p-fix-b", { scale: 1.25, transformOrigin: "1620px 300px" }, { scale: 1.7, duration: 0.5, ease: "power3.inOut" }, 8.35);
+    [0, 1, 2, 3].forEach((i) => {
+      const t = [0.1, 2.1, 5.1, 8.1][i];
+      tl.fromTo(`#p-cap-${i}`, { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.22, ease: "power4.out" }, t);
+    });
+    tl.fromTo("#p-step", { opacity: 0 }, { opacity: 1, duration: 0.2 }, 0.1);
+    window.__timelines["product"] = tl;
+  </script>
+</template>

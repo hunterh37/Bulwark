@@ -1,0 +1,44 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#0B0D10; color:#E8EAED;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    .h-shot { position:absolute; inset:0; overflow:hidden; z-index:1; }
+    .h-shot img { position:absolute; left:0; top:0; width:1920px; height:1080px; object-fit:cover; }
+    #h-scrim { position:absolute; inset:0; z-index:2;
+      background:linear-gradient(180deg, rgba(11,13,16,.35) 0%, rgba(11,13,16,0) 40%, rgba(11,13,16,.9) 100%); }
+    .h-line { position:absolute; left:96px; right:96px; bottom:84px; z-index:4; font-weight:900; font-size:190px;
+      line-height:.92; letter-spacing:-.03em; text-transform:uppercase; }
+    .h-line .y { color:#F5C518; }
+    #h-ask { position:absolute; inset:0; z-index:5; background:#0B0D10; display:flex; align-items:center; justify-content:center;
+      background-image:linear-gradient(#262B33 1px,transparent 1px),linear-gradient(90deg,#262B33 1px,transparent 1px); background-size:96px 96px; }
+    #h-ask-t { font-weight:900; font-size:200px; line-height:.92; letter-spacing:-.03em; text-transform:uppercase; text-align:center; }
+    #h-ask-t .y { color:#F5C518; }
+  </style>
+  <div id="root" data-composition-id="hook" data-width="1920" data-height="1080">
+    <div id="h-s0" class="clip h-shot" data-start="0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/pearl1882.jpg" alt=""></div>
+    <div id="h-s1" class="clip h-shot" data-start="0.5" data-duration="0.25" data-track-index="0" data-layout-ignore><img src="assets/archive/switch1910.jpg" alt=""></div>
+    <div id="h-s2" class="clip h-shot" data-start="0.75" data-duration="0.25" data-track-index="0" data-layout-ignore><img src="assets/archive/realines.jpg" alt=""></div>
+    <div id="h-s3" class="clip h-shot" data-start="1.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/wilsongen1942.jpg" alt=""></div>
+    <div id="h-s4" class="clip h-shot" data-start="1.5" data-duration="0.25" data-track-index="0" data-layout-ignore><img src="assets/archive/stator1942.jpg" alt=""></div>
+    <div id="h-s5" class="clip h-shot" data-start="1.75" data-duration="0.25" data-track-index="0" data-layout-ignore><img src="assets/archive/switchyard1942.jpg" alt=""></div>
+    <div id="h-s6" class="clip h-shot" data-start="2.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/tower.jpg" alt=""></div>
+    <div id="h-s7" class="clip h-shot" data-start="2.5" data-duration="0.25" data-track-index="0" data-layout-ignore><img src="assets/archive/staten1973.jpg" alt=""></div>
+    <div id="h-s8" class="clip h-shot" data-start="2.75" data-duration="0.25" data-track-index="0" data-layout-ignore><img src="assets/archive/director.jpg" alt=""></div>
+    <div id="h-s9" class="clip h-shot" data-start="3.0" data-duration="0.5" data-track-index="0" data-layout-ignore><img src="assets/archive/coulee.jpg" alt=""></div>
+    <div id="h-scrim" data-layout-ignore></div>
+    <div id="h-l0" class="clip h-line" data-start="0" data-duration="2.0" data-track-index="2"><span class="w">The</span> <span class="w">grid</span></div>
+    <div id="h-l1" class="clip h-line" data-start="2.0" data-duration="1.5" data-track-index="2"><span class="w">runs</span> <span class="w">on</span> <span class="w y">code</span></div>
+    <div id="h-ask" class="clip" data-start="3.5" data-duration="1.5" data-track-index="3" data-layout-ignore>
+      <div id="h-ask-t"><span class="w">Who</span> <span class="w">checks</span><br><span class="w y">the</span> <span class="w y">code?</span></div>
+    </div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    for (let i = 0; i < 10; i++) tl.fromTo(`#h-s${i} img`, { scale: 1.04 }, { scale: 1.09, duration: 0.5, ease: "none" }, [0, 0.5, 0.75, 1.0, 1.5, 1.75, 2.0, 2.5, 2.75, 3.0][i]);
+    tl.fromTo("#h-l0 .w", { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.22, stagger: 0.12, ease: "power4.out" }, 0.05);
+    tl.fromTo("#h-l1 .w", { yPercent: 60, opacity: 0 }, { yPercent: 0, opacity: 1, duration: 0.2, stagger: 0.14, ease: "power4.out" }, 2.02);
+    tl.fromTo("#h-ask-t .w", { opacity: 0, scale: 1.35 }, { opacity: 1, scale: 1, duration: 0.16, stagger: 0.16, ease: "power3.out" }, 3.55);
+    window.__timelines["hook"] = tl;
+  </script>
+</template>

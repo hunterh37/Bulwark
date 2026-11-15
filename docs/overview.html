@@ -1,0 +1,196 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Bulwark overview</title>
+<style>
+@page { size: 13.333in 7.5in; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #0B0D10; color: #E8EAED; font: 17px/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 13.333in; height: 7.5in; padding: 0.62in 0.75in 0.5in; position: relative; overflow: hidden; break-after: page; }
+.page:last-child { break-after: auto; }
+.grid-bg { background-image: linear-gradient(#1b1f26 1px, transparent 1px), linear-gradient(90deg, #1b1f26 1px, transparent 1px); background-size: 48px 48px; }
+.kicker { font: 700 12px Menlo, monospace; letter-spacing: .18em; text-transform: uppercase; color: #F5C518; margin-bottom: 10px; }
+h1 { font-size: 64px; line-height: 1; letter-spacing: -.025em; font-weight: 800; margin: 0 0 18px; max-width: 9.6in; }
+h2 { font-size: 34px; line-height: 1.05; letter-spacing: -.02em; font-weight: 800; margin: 0 0 18px; }
+h3 { font-size: 16px; margin: 0 0 4px; }
+p { margin: 0 0 10px; }
+.muted { color: #8A919C; }
+.mono { font-family: Menlo, monospace; font-size: 13px; }
+.cols { display: grid; gap: 22px; }
+.c2 { grid-template-columns: 1fr 1fr; } .c3 { grid-template-columns: repeat(3, 1fr); } .c4 { grid-template-columns: repeat(4, 1fr); }
+.c64 { grid-template-columns: 1.15fr 1fr; }
+.card { background: #13161B; border: 1px solid #262B33; border-radius: 8px; padding: 16px 18px; }
+.card p { color: #B4BAC4; font-size: 14.5px; margin: 4px 0 0; }
+.stat { font: 700 40px Menlo, monospace; color: #F5C518; line-height: 1.1; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #262B33; vertical-align: top; }
+th { color: #8A919C; font-weight: 600; }
+td.n, th.n { text-align: right; font-family: Menlo, monospace; }
+.src { position: absolute; left: 0.75in; right: 0.75in; bottom: 0.3in; font-size: 10px; color: #6b727d; line-height: 1.35; }
+.src a { color: #6b727d; }
+.shot { width: 100%; border: 1px solid #262B33; border-radius: 8px; display: block; }
+.logo { display: flex; gap: 14px; align-items: center; font: 700 18px Menlo, monospace; letter-spacing: .22em; }
+.logo svg { width: 40px; height: 40px; }
+.pn { position: absolute; right: 0.75in; top: 0.42in; font: 700 11px Menlo, monospace; color: #6b727d; letter-spacing: .14em; }
+ul { margin: 0; padding-left: 18px; } li { margin: 0 0 6px; }
+.ok { color: #3DDC84; } .warn { color: #FF9F1C; }
+.volt { color: #F5C518; }
+</style>
+</head>
+<body>
+
+<section class="page grid-bg">
+  <div class="logo"><svg viewBox="0 0 32 32"><path fill="#F5C518" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/><path fill="#0B0D10" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></svg>BULWARK</div>
+  <div style="margin-top:1.35in">
+    <div class="kicker">Power · Water · EV charging · Building automation</div>
+    <h1>Security scanning for the software that runs the grid.</h1>
+    <p style="font-size:22px;max-width:9in" class="muted">Code scanning with OT protocol rules, verified fix pull requests, SBOM and an evidence report. Runs in CI, in the cloud or air-gapped.</p>
+  </div>
+  <p class="mono muted" style="position:absolute;left:0.75in;bottom:0.55in">bulwark-cloud.onrender.com · github.com/hunterh37/Bulwark · version 1.1.0 · 15 November 2026</p>
+</section>
+
+<section class="page">
+  <div class="pn">02 PROBLEM</div>
+  <div class="kicker">Problem</div>
+  <h2>OT software ships with the same insecure settings, and general scanners do not look for them.</h2>
+  <div class="cols c3">
+    <div class="card"><div class="stat">34+</div><h3>US water utilities hit through default or missing passwords</h3><p>CISA advisory AA23-335A, Unitronics PLC and HMI campaign: at least 34 water and wastewater victims among at least 75 devices.<sup>1</sup></p></div>
+    <div class="card"><div class="stat">2026</div><h3>OCPP backends without authentication</h3><p>CISA ICS advisories this year describe charging backends that accept OCPP WebSocket connections from anyone who knows a station id.<sup>2</sup></p></div>
+    <div class="card"><div class="stat">11 Dec 2027</div><h3>EU Cyber Resilience Act applies in full</h3><p>Annex I Part II asks manufacturers for a machine-readable SBOM and vulnerability handling. Reporting duties started 11 Sep 2026 per most sources read.<sup>3</sup></p></div>
+  </div>
+  <div class="cols c2" style="margin-top:22px">
+    <div>
+      <h3>Who has the problem</h3>
+      <p class="muted">Engineering teams of 20 to 500 at OT and energy software vendors, charging network operators and utilities with in-house SCADA code. Most have no application security staff. IEC 62443-4-1 audits and CRA duties land on the same team that writes the code.</p>
+    </div>
+    <div>
+      <h3>What exists</h3>
+      <p class="muted">Snyk, Semgrep, GitHub Advanced Security and Aikido sell code scanning at $19 to $30 per committer per month or $300 to $600 per team. None of their public pages read in our research list an OT protocol rule set.<sup>4</sup> OT security vendors watch networks and firmware, after the code has shipped.</p>
+    </div>
+  </div>
+  <div class="src">1 cisa.gov/news-events/cybersecurity-advisories/aa23-335a · 2 cisa.gov/news-events/ics-advisories/icsa-26-057-07 (read through secondary summaries) · 3 secondary sources: fossa.com/blog/sbom-requirements-cra-cyber-resilience-act, crowell.com CRA client alert; one source dates reporting to 2027 · 4 snyk.io/plans, semgrep.dev/pricing, github.com/security/advanced-security, aikido.dev/pricing. Absence on those pages does not prove no such rule exists. Full notes with unconfirmed items: notes/research-market.md</div>
+</section>
+
+<section class="page">
+  <div class="pn">03 PRODUCT</div>
+  <div class="kicker">Product</div>
+  <div class="cols c64">
+    <div>
+      <h2>Scan, rank, fix, prove.</h2>
+      <div class="cols c2" style="gap:14px">
+        <div class="card"><h3>Scan</h3><p>GitHub Action on pull requests, Bulwark Cloud on a daily schedule, or the Edge runner inside a plant network. 17 rules for Modbus, DNP3, IEC 61850, IEC 104, OCPP, OPC UA, BACnet, credentials, secrets and TLS, plus npm, PyPI and Go dependencies.</p></div>
+        <div class="card"><h3>Rank</h3><p>CWE id and grid-impact flag on each finding. Advisories in the CISA Known Exploited Vulnerabilities catalog go first. Test and example code is kept out of the count. Triage state follows a finding across scans.</p></div>
+        <div class="card"><h3>Fix</h3><p>Seven rules have an autofix. Bulwark patches the line, rescans the patched file and opens a pull request when the finding is gone and nothing new appears.</p></div>
+        <div class="card"><h3>Prove</h3><p>CycloneDX 1.5 SBOM per repository. Printable evidence report with scope, commits, findings, fixes and audit log, mapped to IEC 62443-4-1 practice areas, CRA Annex I Part II and NERC CIP-013.</p></div>
+      </div>
+      <p class="mono muted" style="margin-top:14px">- uses: hunterh37/Bulwark@main<br>&nbsp;&nbsp;with: { fail-on: high }</p>
+    </div>
+    <div>
+      <img class="shot" src="overview-assets/fix-crop.png" alt="Fix dialog with verified diff">
+      <p class="muted" style="font-size:12px;margin-top:8px">Portal, Findings: the fix dialog shows the patch and the rescan result before the pull request opens. Screenshot from version 1.1.0.</p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="pn">04 MEASURED</div>
+  <div class="kicker">Measured</div>
+  <h2>The first rules were noise. We measured it and rebuilt them.</h2>
+  <div class="cols c64">
+    <div>
+      <div class="cols c3" style="gap:14px;margin-bottom:16px">
+        <div class="card"><div class="stat">5,192 → 47</div><p>Findings on 15 public OT repositories (10,233 files): rules 1.0.0, then 1.1.0. 145 more sit in test and example paths at low severity.</p></div>
+        <div class="card"><div class="stat">0.66</div><p>Hand-labeled precision of the 47 live findings: 31 true, 16 false. Most false ones are library internals that wrap an insecure constructor.</p></div>
+        <div class="card"><div class="stat">1.00 / 1.00</div><p>Precision and recall on 77 labeled lines. 11 of 11 autofix cases verified. Gate runs in CI on every push.</p></div>
+      </div>
+      <p class="muted">What changed: 1.0.0 matched any line that mentioned a protocol identifier, so three rules produced 4,829 findings. 1.1.0 matches the call or setting that creates an insecure endpoint and skips comments, imports, declarations, translation files and loopback binds.</p>
+      <p class="muted">What is not measured: recall on real repositories. The public repositories have no ground-truth list of insecure lines.</p>
+      <p class="mono muted">packages/cloud/eval/FIELD.md · REPORT.md · field-labels.json</p>
+    </div>
+    <div>
+      <table>
+        <tr><th>Rule (live findings only)</th><th class="n">Live</th><th class="n">True</th><th class="n">False</th><th class="n">Precision</th></tr>
+        <tr><td>ot.iec61850-mms-plain</td><td class="n">15</td><td class="n">13</td><td class="n">2</td><td class="n">0.87</td></tr>
+        <tr><td>ot.dnp3-no-sa</td><td class="n">13</td><td class="n">5</td><td class="n">8</td><td class="n">0.38</td></tr>
+        <tr><td>ot.opcua-security-none</td><td class="n">8</td><td class="n">4</td><td class="n">4</td><td class="n">0.50</td></tr>
+        <tr><td>ot.default-credentials</td><td class="n">5</td><td class="n">4</td><td class="n">1</td><td class="n">0.80</td></tr>
+        <tr><td>ot.modbus-tcp-server</td><td class="n">3</td><td class="n">2</td><td class="n">1</td><td class="n">0.67</td></tr>
+        <tr><td>ot.modbus-write-unchecked</td><td class="n">3</td><td class="n">3</td><td class="n">0</td><td class="n">1.00</td></tr>
+        <tr><th>Total</th><th class="n">47</th><th class="n">31</th><th class="n">16</th><th class="n">0.66</th></tr>
+      </table>
+      <p class="muted" style="font-size:12.5px;margin-top:10px">Repositories: pymodbus, libmodbus, libiec61850, lib60870, stepfunc/dnp3, mobilityhouse/ocpp, MicroOcpp, opcua-asyncio, open62541, BAC0, Scada-LTS, FUXA, OpenPLC_v3, SteVe, libocpp, at pinned commits.</p>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="pn">05 STATUS</div>
+  <div class="kicker">Buildout status, 15 November 2026</div>
+  <h2>Live at bulwark-cloud.onrender.com, version 1.1.0.</h2>
+  <div class="cols c2">
+    <div class="card">
+      <h3 class="ok">Built and verified in production</h3>
+      <ul style="font-size:14px;color:#B4BAC4;margin-top:8px">
+        <li>Accounts, organizations, sessions, password change, self-serve deletion</li>
+        <li>Cloud scans of public and private GitHub repositories, daily rescans, scan on push when a webhook secret is set</li>
+        <li>17 rules in grid-ot and secrets-core; deps-osv for npm, PyPI, Go with CISA KEV flag (1,781 entries loaded)</li>
+        <li>Fix pull requests with rescan gate; production test opened and closed a PR on a private repository</li>
+        <li>Finding fingerprints, triage carry-over, test-context separation, CWE ids</li>
+        <li>CycloneDX SBOM, evidence report, audit log, alert webhook</li>
+        <li>Edge runner 1.1.0: single file, air-gapped mode, SARIF, SBOM, CI gate; GitHub Action</li>
+        <li>Security headers, rate limits, encrypted tokens, runner upload validation</li>
+        <li>Tests: 13 unit, eval gates, 42 end-to-end checks passing against production</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 class="warn">Not built, or needs the account owner</h3>
+      <ul style="font-size:14px;color:#B4BAC4;margin-top:8px">
+        <li>Billing. No checkout exists; the free plan limit of 3 repositories is enforced, paid plans are by request</li>
+        <li>Render free tier: the web service sleeps after 15 minutes idle, which also pauses scheduled rescans, and the free Postgres expires 15 December 2026</li>
+        <li>GitHub App and OAuth app for one-click connect and scan on push; today a fine-grained token is pasted in</li>
+        <li>Password reset by email, SSO, multiple users per organization with roles</li>
+        <li>Running the customer's tests in a sandbox before the pull request; today the customer's CI runs on the branch</li>
+        <li>Model-written patches need an ANTHROPIC_API_KEY on the service; without it, 7 rules have fixes</li>
+        <li>Rule depth: line-level matching, no data flow. DNP3 and OPC UA rules have the lowest field precision</li>
+        <li>No paying customer and no design partner yet</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="page">
+  <div class="pn">06 PLAN</div>
+  <div class="kicker">Business</div>
+  <h2>Free in CI, paid for the fleet view and the evidence.</h2>
+  <div class="cols c3">
+    <div class="card"><h3>Entry</h3><p>The GitHub Action and the Edge runner need no account. An engineer adds three lines to a workflow and gets OT findings, SARIF and an SBOM on the next pull request.</p></div>
+    <div class="card"><h3>Paid</h3><p>Team, $49 per repository per month: more than 3 repositories in Bulwark Cloud, scheduled rescans, alerts, fix pull requests, evidence report. Enterprise: air-gapped kits and a self-hosted control plane.</p></div>
+    <div class="card"><h3>Why they renew</h3><p>The evidence report and SBOM are needed at every release and every audit. Findings history and triage decisions live in Bulwark.</p></div>
+  </div>
+  <div class="cols c2" style="margin-top:22px">
+    <div>
+      <h3>Next 30 days</h3>
+      <ul class="muted" style="font-size:14.5px">
+        <li>Five design partners from OT software vendors and charging networks; run the field eval on their code and label the results with them</li>
+        <li>Paid Render plan and database before 15 December; GitHub App; Stripe checkout for Team</li>
+        <li>Raise field precision of the DNP3 and OPC UA rules; add rules partners ask for</li>
+        <li>Publish the Action to the GitHub Marketplace with a pinned release tag</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Published prices of general scanners</h3>
+      <table>
+        <tr><th>Product</th><th>Price</th></tr>
+        <tr><td>GitHub Code Security / Secret Protection</td><td>$30 / $19 per active committer per month</td></tr>
+        <tr><td>Semgrep Teams</td><td>from $30 per contributor per month</td></tr>
+        <tr><td>Snyk Team</td><td>from $25 per month, up to 10 developers</td></tr>
+        <tr><td>Aikido Basic / Pro</td><td>$300 / $600 per month, 10 users</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="src">Prices from the vendors' public pricing pages, read 15 November 2026: github.com/security/advanced-security, semgrep.dev/pricing, snyk.io/plans, aikido.dev/pricing. The $49 Bulwark price is a list price that no customer has paid yet.</div>
+</section>
+
+</body>
+</html>

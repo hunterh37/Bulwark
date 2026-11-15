@@ -1,0 +1,46 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#07090B; color:#E8EAED;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    #t-term { position:absolute; inset:0; z-index:1; background:#07090B; padding:150px 96px 0; }
+    #t-bar { font:700 30px "JetBrains Mono",Menlo,monospace; letter-spacing:.16em; color:#8A919C; text-transform:uppercase; margin-bottom:44px; }
+    .t-ln { font:700 44px/1.35 "JetBrains Mono",Menlo,monospace; letter-spacing:-.02em; white-space:nowrap; }
+    #t-cmd { color:#E8EAED; } #t-cmd i { color:#F5C518; font-style:normal; }
+    #t-out { color:#8A919C; margin-top:26px; font-size:36px; } #t-out b { color:#FF5C5C; } #t-out u { color:#FF9F1C; text-decoration:none; }
+    #t-gate { color:#FF5C5C; margin-top:10px; font-size:36px; }
+    #t-exit { color:#F5C518; margin-top:10px; font-size:36px; }
+    .r-vid { position:absolute; left:0; top:0; width:1920px; height:1080px; z-index:2; }
+    .q-cap { position:absolute; left:72px; bottom:64px; z-index:6; background:#F5C518; color:#0B0D10; padding:14px 30px 16px;
+      font-weight:900; font-size:92px; line-height:1; letter-spacing:-.02em; text-transform:uppercase; }
+    #r-chips { position:absolute; right:72px; top:150px; z-index:6; display:flex; flex-direction:column; gap:16px; align-items:flex-end; }
+    #r-chips span { font:700 40px "JetBrains Mono",Menlo,monospace; background:#0B0D10; color:#F5C518; padding:14px 22px; border-radius:8px; }
+  </style>
+  <div id="root" data-composition-id="proof" data-width="1920" data-height="1080">
+    <div id="t-term" class="clip" data-start="0" data-duration="2.5" data-track-index="0" data-layout-ignore>
+      <div id="t-bar">Edge runner · no network</div>
+      <div id="t-cmd" class="t-ln"><i>$</i> <span id="t-typed">node bulwark-runner.mjs scan scada-hmi --offline --fail-on high</span></div>
+      <div id="t-out" class="t-ln">scada-hmi files=3 findings=8 <b>critical=2</b> <u>high=4</u> medium=1 components=2 offline</div>
+      <div id="t-gate" class="t-ln">6 findings at or above high</div>
+      <div id="t-exit" class="t-ln">exit 2</div>
+    </div>
+    <div id="q-cap-0" class="clip q-cap" data-start="0.9" data-duration="1.6" data-track-index="3" data-layout-allow-overlap>CI gate. Air-gapped.</div>
+    <video id="r-report" class="clip r-vid" muted playsinline src="assets/footage/report.mp4" data-start="2.5" data-duration="3.0" data-track-index="1" data-layout-ignore></video>
+    <div id="r-chips" class="clip" data-start="2.9" data-duration="2.6" data-track-index="4" data-layout-allow-overlap>
+      <span>CycloneDX SBOM</span><span>CISA KEV</span><span>IEC 62443-4-1</span><span>EU CRA</span><span>NERC CIP-013</span>
+    </div>
+    <div id="q-cap-1" class="clip q-cap" data-start="2.6" data-duration="2.9" data-track-index="3" data-layout-allow-overlap>Evidence report</div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#t-typed", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.75, ease: "steps(30)" }, 0.1);
+    tl.fromTo("#t-out", { opacity: 0 }, { opacity: 1, duration: 0.05 }, 1.0);
+    tl.fromTo("#t-gate", { opacity: 0 }, { opacity: 1, duration: 0.05 }, 1.25);
+    tl.fromTo("#t-exit", { opacity: 0 }, { opacity: 1, duration: 0.05 }, 1.5);
+    tl.fromTo("#q-cap-0", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.22, ease: "power4.out" }, 0.9);
+    tl.fromTo("#r-report", { scale: 1.02, transformOrigin: "960px 300px" }, { scale: 1.12, duration: 3.0, ease: "none" }, 2.5);
+    tl.fromTo("#q-cap-1", { clipPath: "inset(0% 100% 0% 0%)" }, { clipPath: "inset(0% 0% 0% 0%)", duration: 0.22, ease: "power4.out" }, 2.6);
+    tl.fromTo("#r-chips span", { opacity: 0, x: 40 }, { opacity: 1, x: 0, duration: 0.16, stagger: 0.25, ease: "power3.out" }, 2.95);
+    window.__timelines["proof"] = tl;
+  </script>
+</template>
