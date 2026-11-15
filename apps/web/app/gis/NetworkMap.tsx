@@ -2,6 +2,8 @@
 import { useEffect, useRef, useState } from 'react';
 import type { MapAsset, MapTelemetry, MapTopology, AssetStatus } from './data';
 import styles from './gis.module.css';
+import type { DistrictSummary } from './districts';
+import type { PipeReading } from './simulation';
 export const statusColors: Record<AssetStatus, string> = { ok: '#4ee0b0', warning: '#f4c35e', alarm: '#ff6e78', offline: '#8c99ab', isolated: '#b39aff' };
 const rank: Record<AssetStatus, number> = { ok: 0, warning: 1, isolated: 2, offline: 3, alarm: 4 };
 export function project(lon: number, lat: number, zoom: number) {
@@ -22,20 +24,26 @@ interface Props {
     visibleAssetIds?: string[];
     showSegments?: boolean;
     tileUrl?: string;
+    districts?: DistrictSummary[];
+    pipeReadings?: PipeReading[];
+    selectedDistrictId?: string;
+    onSelectDistrict?: (district: DistrictSummary) => void;
 }
 /** Dependency-free slippy map. Pass existing ops Topology and Telemetry directly. */
-export default function NetworkMap({ topology, telemetry = [], selectedAssetId, onSelectAsset, visibleAssetIds, showSegments = true, tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' }: Props) {
+export default function NetworkMap({ topology, telemetry = [], selectedAssetId, onSelectAsset, visibleAssetIds, showSegments = true, districts = [], pipeReadings = [], selectedDistrictId, onSelectDistrict, tileUrl = 'https://tile.openstreetmap.org/{z}/{x}/{y}.png' }: Props) {
     const container = useRef<HTMLDivElement>(null);
+    const suppressClick = useRef(false);
     const drag = useRef<{
         x: number;
         y: number;
+        moved: boolean;
         center: {
             lon: number;
             lat: number;
         };
     } | null>(null);
     const [size, setSize] = useState({ width: 800, height: 640 });
-    const [view, setView] = useState({ lon: -96.1, lat: 32.9, zoom: 6 });
+    const [view, setView] = useState({ lon: topology.assets[0]?.lon ?? -71.1, lat: topology.assets[0]?.lat ?? 42.34, zoom: 11 });
     const [tileError, setTileError] = useState(false);
     useEffect(() => {
         if (!container.current)
@@ -48,6 +56,7 @@ export default function NetworkMap({ topology, telemetry = [], selectedAssetId, 
     const origin = { x: center.x - size.width / 2, y: center.y - size.height / 2 };
     const point = (lon: number, lat: number) => { const p = project(lon, lat, view.zoom); return { x: p.x - origin.x, y: p.y - origin.y }; };
     const statuses = new Map(telemetry.map(t => [t.assetId, t.status]));
+    const flowReadings = new Map(pipeReadings.map(p => [p.id, p]));
     const tiles = [];
     const count = 2 ** view.zoom;
     for (let y = Math.max(0, Math.floor(origin.y / 256)); y <= Math.min(count - 1, Math.floor((origin.y + size.height) / 256)); y++) {
@@ -61,7 +70,7 @@ export default function NetworkMap({ topology, telemetry = [], selectedAssetId, 
         const lons = topology.assets.map(a => a.lon), lats = topology.assets.map(a => a.lat);
         const lon = (Math.min(...lons) + Math.max(...lons)) / 2;
         const north = Math.max(...lats), south = Math.min(...lats);
-        let zoom = 9;
+        let zoom = 15;
         for (; zoom > 3; zoom--) {
             const a = project(Math.min(...lons), north, zoom), b = project(Math.max(...lons), south, zoom);
             if (b.x - a.x < size.width - 120 && b.y - a.y < size.height - 120)
@@ -71,36 +80,48 @@ export default function NetworkMap({ topology, telemetry = [], selectedAssetId, 
         setView({ ...unproject(a.x, (a.y + b.y) / 2, zoom), zoom });
     }
     useEffect(() => { fit(); }, [topology, size.width, size.height]); // Refit on new topology or viewport.
-    return <div ref={container} className={styles.map} aria-label="Interactive pipeline map. Drag to pan; use buttons to zoom." onPointerDown={e => {
+    return <div ref={container} className={styles.map} aria-label="Interactive network map. Drag to pan; use buttons to zoom. Select a district for summary." onPointerDown={e => {
+            suppressClick.current = false;
             if ((e.target as HTMLElement).closest('button, a'))
                 return;
-            e.currentTarget.setPointerCapture(e.pointerId);
-            drag.current = { x: e.clientX, y: e.clientY, center: { lon: view.lon, lat: view.lat } };
+            drag.current = { x: e.clientX, y: e.clientY, moved: false, center: { lon: view.lon, lat: view.lat } };
         }} onPointerMove={e => {
             if (!drag.current)
                 return;
             const pointer = drag.current;
+            if (!pointer.moved && Math.hypot(e.clientX - pointer.x, e.clientY - pointer.y) < 4)
+                return;
+            if (!pointer.moved) {
+                e.currentTarget.setPointerCapture(e.pointerId);
+                pointer.moved = true;
+            }
             const start = project(pointer.center.lon, pointer.center.lat, view.zoom);
             const x = start.x - (e.clientX - pointer.x);
             const y = start.y - (e.clientY - pointer.y);
             setView(v => ({ ...v, ...unproject(x, y, v.zoom) }));
-        }} onPointerUp={() => { drag.current = null; }} onPointerCancel={() => { drag.current = null; }}>
+        }} onPointerUp={() => { suppressClick.current = drag.current?.moved ?? false; drag.current = null; }} onPointerCancel={() => { drag.current = null; suppressClick.current = false; }} onPointerLeave={() => { if (!drag.current?.moved) drag.current = null; }} onClickCapture={e => { if (suppressClick.current) { e.preventDefault(); e.stopPropagation(); suppressClick.current = false; } }}>
     <div className={styles.tiles}>{tiles}</div>
-    <svg className={styles.overlay} width={size.width} height={size.height} aria-hidden="true">
+    <svg className={styles.overlay} width={size.width} height={size.height} aria-label="Water pipes and H3 districts">
+      {districts.map(district => {
+        const points = district.boundary.map(([lon, lat]) => { const p = point(lon, lat); return `${p.x.toFixed(3)},${p.y.toFixed(3)}`; }).join(' ');
+        const color = district.serviceRatio >= .9 ? '#4ee0b0' : district.serviceRatio >= .5 ? '#f4c35e' : '#ff6e78';
+        return <polygon key={district.id} data-district={district.id} points={points} fill={color} fillOpacity={selectedDistrictId === district.id ? .34 : .14} stroke={selectedDistrictId === district.id ? '#ffffff' : color} strokeWidth={selectedDistrictId === district.id ? 2.5 : 1} style={{ pointerEvents: 'all', cursor: 'pointer' }} role="button" tabIndex={0} aria-label={`District ${district.id}, ${district.households} households, ${(district.serviceRatio * 100).toFixed(0)} percent demand served`} onClick={() => onSelectDistrict?.(district)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onSelectDistrict?.(district); } }}><title>{`${district.id}: ${district.deliveredM3h.toFixed(1)} / ${district.demandM3h.toFixed(1)} m³/h · ${district.households} households`}</title></polygon>;
+      })}
       {showSegments && topology.segments.map(segment => {
             const a = statuses.get(segment.from) ?? 'offline', b = statuses.get(segment.to) ?? 'offline';
-            const color = statusColors[rank[a] >= rank[b] ? a : b];
+            const reading = flowReadings.get(segment.id);
+            const color = statusColors[reading?.closed ? 'isolated' : reading?.status === 'warning' ? 'warning' : rank[a] >= rank[b] ? a : b];
             const points = segment.coords.map(([lon, lat]) => { const p = point(lon, lat); return `${p.x},${p.y}`; }).join(' ');
-            return <g key={segment.id}><polyline points={points} fill="none" stroke="#09151f" strokeWidth="9" strokeLinejoin="round"/><polyline points={points} fill="none" stroke={color} strokeWidth="4" strokeLinejoin="round" strokeDasharray={a === 'offline' || b === 'offline' ? '8 6' : undefined}/></g>;
+            return <g key={segment.id}><title>{`${segment.id}${reading ? `: ${reading.flowM3h.toFixed(1)} m³/h · ${reading.velocityMs.toFixed(2)} m/s${reading.closed ? " · CLOSED" : ""}` : ""}`}</title><polyline points={points} fill="none" stroke="#09151f" strokeWidth="9" strokeLinejoin="round"/><polyline points={points} fill="none" stroke={color} strokeWidth="4" strokeLinejoin="round" strokeDasharray={reading?.closed || a === 'offline' || b === 'offline' ? '8 6' : undefined}/>{reading && !reading.closed && Math.abs(reading.flowM3h) > .05 && <polyline points={points} fill="none" stroke="#ffffff" strokeWidth="1.5" strokeDasharray="3 13" className={styles.flowLine} style={{ animationDirection: reading.flowM3h >= 0 ? 'normal' : 'reverse', animationDuration: `${Math.max(.5, 2.8 - Math.abs(reading.flowM3h) / 50).toFixed(3)}s` }}/>}</g>;
         })}
     </svg>
     {topology.assets.filter(a => !visibleAssetIds || visibleAssetIds.includes(a.id)).map(asset => {
             const p = point(asset.lon, asset.lat), status = statuses.get(asset.id) ?? 'offline';
-            return <button key={asset.id} className={`${styles.marker} ${selectedAssetId === asset.id ? styles.selectedMarker : ''}`} style={{ left: p.x, top: p.y, '--marker-color': statusColors[status] } as React.CSSProperties} aria-label={`${asset.name}, ${status}`} aria-pressed={selectedAssetId === asset.id} onClick={() => onSelectAsset?.(asset)}><span>{asset.kind === 'tank' ? '▣' : asset.kind === 'valve' ? '◇' : '●'}</span><b>{asset.id}</b></button>;
+            return <button key={asset.id} className={`${styles.marker} ${asset.kind === 'consumer' ? styles.consumerMarker : ''} ${selectedAssetId === asset.id ? styles.selectedMarker : ''}`} style={{ left: p.x, top: p.y, '--marker-color': statusColors[status] } as React.CSSProperties} aria-label={`${asset.name}, ${status}`} aria-pressed={selectedAssetId === asset.id} onClick={() => onSelectAsset?.(asset)}><span>{asset.kind === 'producer' ? '▣' : asset.kind === 'consumer' ? '●' : asset.kind === 'tank' ? '▣' : '◇'}</span>{(asset.kind !== 'consumer' || selectedAssetId === asset.id) && <b>{asset.id}</b>}</button>;
         })}
     <div className={styles.mapBadge}>GEOGRAPHIC VIEW <span>OSM / WGS 84</span></div>
     <div className={styles.mapControls}>
-      <button aria-label="Zoom in" disabled={view.zoom >= 12} onClick={() => setView(v => ({ ...v, zoom: v.zoom + 1 }))}>+</button>
+      <button aria-label="Zoom in" disabled={view.zoom >= 16} onClick={() => setView(v => ({ ...v, zoom: v.zoom + 1 }))}>+</button>
       <button aria-label="Zoom out" disabled={view.zoom <= 3} onClick={() => setView(v => ({ ...v, zoom: v.zoom - 1 }))}>−</button>
       <button aria-label="Fit pipeline to map" onClick={fit}>⌖</button>
     </div>
