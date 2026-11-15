@@ -7,8 +7,12 @@ Built at Sundai Hack 149 (MIT, Nov 15 2026).
 
 | Path | Purpose |
 |---|---|
-| apps/web | Next.js landing page + customer portal (Render) |
-| packages/cloud | Bulwark Cloud: API, job worker, detectors, model hook (Render) |
+| packages/cloud/public | Landing page + customer portal, served by bulwark-cloud |
+| apps/web | Earlier Next.js prototype (not deployed) |
+| packages/cloud | Bulwark Cloud: accounts, GitHub, modules, scans, runner API (Render) |
+| packages/cloud/src/modules | Detector modules: grid-ot (first module), secrets-core |
+| packages/cloud/src/runner | Bulwark Edge runner, bundled to one file |
+| deploy/edge | Edge kit: Dockerfile, compose, systemd installer |
 | render.yaml | Render Blueprint for all hosted services + Postgres |
 | services/scanner | Runs Semgrep, Trivy, gitleaks, OSV against a commit |
 | services/fixer | LLM patch generation (Claude API) |
@@ -18,3 +22,19 @@ Built at Sundai Hack 149 (MIT, Nov 15 2026).
 | docs | PRD, architecture, security model |
 
 Spec: [docs/PRD.md](docs/PRD.md). Architecture: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md).
+
+## Infrastructure
+
+Hosted (live): Render runs one Node service, `bulwark-cloud` (portal, API, job worker), plus
+Postgres `bulwark-db`. GitHub webhooks hit the API; the worker scans, patches, and opens PRs.
+Config: [render.yaml](render.yaml).
+
+Production target: AWS via [infra/terraform](infra/terraform). ECS Fargate runs scanner and
+fixer, SQS queues jobs, RDS holds findings, S3 stores artifacts, KMS seals repo tokens.
+Patches are tested in Firecracker microVMs (services/sandbox).
+
+Self-host and air-gapped Edge: [docs/SELF_HOST.md](docs/SELF_HOST.md). Diagram:
+[docs/Bulwark-Infrastructure.pdf](docs/Bulwark-Infrastructure.pdf).
+
+Live: https://bulwark-cloud.onrender.com. Infrastructure: [docs/Bulwark-Infrastructure.pdf](docs/Bulwark-Infrastructure.pdf).
+Tests: `npm test` and `node test/e2e.mjs <url>` in packages/cloud.
