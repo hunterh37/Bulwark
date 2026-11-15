@@ -29,6 +29,6 @@ export function literalToEnv(line: string, path: string, inner: RegExp, name: st
 export function credentialToEnv(line: string, path: string, values: RegExp, name: string): string | null {
   const expr = envExpr(path, name);
   if (!expr) return null;
-  const re = new RegExp(`((?:password|passwd|pwd)["']?\\s*(?::=|[:=])\\s*)(["'\`])(?:${values.source})\\2`, "i");
+  const re = new RegExp(`((?<![\\w.$-])(?:password|passwd|pwd)["']?\\s*(?::=|[:=])\\s*)(["'\`])(?:${values.source})\\2`, "i");
   return re.test(line) ? line.replace(re, `$1${expr}`) : null;
 }

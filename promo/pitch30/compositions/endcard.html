@@ -1,0 +1,35 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:transparent; color:#0B0D10;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    #e-flood { position:absolute; inset:0; background:#F5C518; }
+    #e-lock { position:absolute; left:0; right:0; top:270px; display:flex; justify-content:center; align-items:center; gap:44px; }
+    #e-mark { width:230px; height:230px; flex:none; }
+    #e-mark svg { width:230px; height:230px; display:block; overflow:visible; }
+    #e-word { font-weight:900; font-size:190px; letter-spacing:.06em; line-height:1; color:#0B0D10; }
+    #e-tag { position:absolute; left:0; right:0; top:570px; text-align:center; font-weight:700; font-size:52px; letter-spacing:-.01em; color:#0B0D10; }
+    #e-tag .w { display:inline-block; }
+    #e-cta { position:absolute; left:0; right:0; top:720px; display:flex; justify-content:center; }
+    #e-btn { background:#0B0D10; color:#F5C518; font-weight:700; font-size:48px; padding:26px 54px; border-radius:12px; }
+  </style>
+  <div id="root" data-composition-id="endcard" data-width="1920" data-height="1080">
+    <div id="e-flood" class="clip" data-start="0" data-duration="4" data-track-index="0" data-layout-ignore></div>
+    <div id="e-lock" class="clip" data-start="0" data-duration="4" data-track-index="1">
+      <div id="e-mark"><svg viewBox="0 0 32 32"><g id="e-wall"><path fill="#0B0D10" d="M3 29V3h5v4h4V3h8v4h4V3h5v26z"/></g><g id="e-bolt"><path fill="#F5C518" d="M18 9l-7 10h5l-2 7 7-10h-5z"/></g></svg></div>
+      <div id="e-word">BULWARK</div>
+    </div>
+    <div id="e-tag" class="clip" data-start="0" data-duration="4" data-track-index="2"><span class="w">Security</span> <span class="w">scanning</span> <span class="w">for</span> <span class="w">the</span> <span class="w">software</span> <span class="w">that</span> <span class="w">runs</span> <span class="w">the</span> <span class="w">grid.</span></div>
+    <div id="e-cta" class="clip" data-start="0" data-duration="4" data-track-index="3"><div id="e-btn">Create account</div></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#e-flood", {clipPath:"inset(100% 0% 0% 0%)"}, {clipPath:"inset(0% 0% 0% 0%)", duration:0.36, ease:"power2.inOut"}, 0);
+    tl.fromTo("#e-wall", {clipPath:"inset(100% 0% 0% 0%)"}, {clipPath:"inset(0% 0% 0% 0%)", duration:0.3, ease:"power4.out"}, 0.2);
+    tl.fromTo("#e-bolt", {opacity:0, scale:2.4, transformOrigin:"16px 17px"}, {opacity:1, scale:1, duration:0.1, ease:"power3.in"}, 0.4);
+    tl.fromTo("#e-word", {clipPath:"inset(0% 100% 0% 0%)"}, {clipPath:"inset(0% 0% 0% 0%)", duration:0.36, ease:"power4.out"}, 0.5);
+    tl.fromTo("#e-tag .w", {opacity:0}, {opacity:1, duration:0.08, stagger:0.045, ease:"none"}, 1.0);
+    tl.fromTo("#e-btn", {opacity:0, scale:0.8}, {opacity:1, scale:1, duration:0.22, ease:"back.out(1.6)"}, 1.5);
+    window.__timelines["endcard"] = tl;
+  </script>
+</template>

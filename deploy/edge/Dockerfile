@@ -1,4 +1,4 @@
-# Bulwark Edge runner. Build offline: docker build -t bulwark-runner:1.0.0 .
+# Bulwark Edge runner. Build offline: docker build -t bulwark-runner:1.1.0 .
 FROM node:22-alpine
 RUN apk add --no-cache git && adduser -D -u 10001 bulwark
 COPY bulwark-runner.mjs /opt/bulwark/bulwark-runner.mjs

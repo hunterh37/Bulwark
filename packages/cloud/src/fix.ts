@@ -1,4 +1,4 @@
-import { runModules } from "./detect/rules.js";
+import { ruleLines, runModules } from "./detect/rules.js";
 import { MODULES } from "./modules/index.js";
 import type { Rule } from "./modules/types.js";
 
@@ -18,10 +18,9 @@ function ruleById(id: string): Rule | undefined {
 }
 
 /** Finds the line that still triggers the rule, preferring the reported line. */
-function locate(lines: string[], rule: Rule, hint: number): number {
-  if (hint >= 1 && hint <= lines.length && rule.re.test(lines[hint - 1])) return hint;
-  const i = lines.findIndex((l) => rule.re.test(l));
-  return i + 1;
+function locate(path: string, content: string, rule: Rule, hint: number): number {
+  const hit = ruleLines(rule, path, content);
+  return hit.includes(hint) ? hint : hit[0] ?? 0;
 }
 
 async function claudeRewrite(path: string, content: string, rule: Rule, line: number): Promise<string | null> {
@@ -48,7 +47,7 @@ export async function planFix(path: string, content: string, ruleId: string, hin
   const rule = ruleById(ruleId);
   if (!rule) return { ok: false, error: `no rule ${ruleId}` };
   const lines = content.split("\n");
-  const line = locate(lines, rule, hintLine);
+  const line = locate(path, content, rule, hintLine);
   if (!line) return { ok: false, error: "finding no longer present in the file" };
 
   let patched: string | null = null;
@@ -93,6 +92,7 @@ export function prBody(f: { rule_id: string; message: string; fix: string; file:
     f.message, "", `Remediation: ${f.fix}`, "",
     "```diff", diff, "```", "",
     `Verification: Bulwark rescanned the patched file. The finding is gone (${plan.verification.findingsBefore} findings before, ${plan.verification.findingsAfter} after). Engine: ${plan.engine}.`,
+    f.rule_id === "ot.opcua-security-none" ? "This change needs application certificates on both ends before it can connect." : "",
     "Your CI runs on this branch; merge after it passes.",
-  ].join("\n");
+  ].filter((l, i, a) => l !== "" || a[i - 1] !== "").join("\n");
 }

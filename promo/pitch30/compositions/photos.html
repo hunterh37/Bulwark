@@ -1,0 +1,62 @@
+<template>
+  <style>
+    #root { position:absolute; inset:0; overflow:hidden; background:#0B0D10; color:#FFFFFF;
+      font-family:Inter,"Helvetica Neue",Helvetica,Arial,sans-serif; }
+    #root * { box-sizing:border-box; }
+    .ph { position:absolute; inset:0; overflow:hidden; z-index:1; }
+    .ph img { position:absolute; left:-192px; top:-108px; width:2304px; height:1296px; }
+    #ph-scrim { position:absolute; inset:0; z-index:2;
+      background:linear-gradient(180deg, rgba(11,13,16,.30) 0%, rgba(11,13,16,0) 30%, rgba(11,13,16,.10) 48%, rgba(11,13,16,.86) 100%); }
+    .ph-line { position:absolute; left:96px; right:96px; bottom:92px; z-index:4; font-weight:900; font-size:196px;
+      line-height:.92; letter-spacing:-.03em; text-transform:uppercase; }
+    .ph-line .w { display:inline-block; }
+    .ph-line .volt { color:#F5C518; }
+    .ph-sector { position:absolute; left:96px; right:96px; bottom:92px; z-index:4; }
+    .ph-proto { font:700 46px "JetBrains Mono",Menlo,monospace; color:#F5C518; letter-spacing:.04em; margin-bottom:22px; }
+    .ph-word { font-weight:900; font-size:236px; line-height:.9; letter-spacing:-.035em; text-transform:uppercase; white-space:nowrap; }
+    #ph-sec-3 .ph-word { font-size:150px; }
+  </style>
+  <div id="root" data-composition-id="photos" data-width="1920" data-height="1080">
+    <div id="ph-0" class="clip ph" data-start="0" data-duration="2" data-track-index="0" data-layout-ignore><img src="assets/photos/pylon-sun.jpg" alt=""></div>
+    <div id="ph-1" class="clip ph" data-start="2" data-duration="1" data-track-index="0" data-layout-ignore><img src="assets/photos/plant-night.jpg" alt=""></div>
+    <div id="ph-2" class="clip ph" data-start="3" data-duration="1" data-track-index="0" data-layout-ignore><img src="assets/photos/digester-dusk.jpg" alt=""></div>
+    <div id="ph-3" class="clip ph" data-start="4" data-duration="1" data-track-index="0" data-layout-ignore><img src="assets/photos/ev-charger.jpg" alt=""></div>
+    <div id="ph-4" class="clip ph" data-start="5" data-duration="1" data-track-index="0" data-layout-ignore><img src="assets/photos/towers-up.jpg" alt=""></div>
+    <div id="ph-5" class="clip ph" data-start="6" data-duration="2" data-track-index="0" data-layout-ignore><img src="assets/photos/skyline-b.jpg" alt=""></div>
+    <div id="ph-scrim" data-layout-ignore></div>
+
+    <div id="ph-hook" class="clip ph-line" data-start="0" data-duration="2" data-track-index="2"><span class="w" id="ph-hook-0">Software</span><br><span class="w" id="ph-hook-1">runs</span> <span class="w" id="ph-hook-2">the grid</span></div>
+
+    <div id="ph-sec-0" class="clip ph-sector" data-start="2" data-duration="1" data-track-index="3"><div class="ph-proto">DNP3 · IEC 61850</div><div class="ph-word">Power</div></div>
+    <div id="ph-sec-1" class="clip ph-sector" data-start="3" data-duration="1" data-track-index="3"><div class="ph-proto">Modbus · OPC UA</div><div class="ph-word">Water</div></div>
+    <div id="ph-sec-2" class="clip ph-sector" data-start="4" data-duration="1" data-track-index="3"><div class="ph-proto">OCPP</div><div class="ph-word">EV charging</div></div>
+    <div id="ph-sec-3" class="clip ph-sector" data-start="5" data-duration="1" data-track-index="3"><div class="ph-proto">BACnet</div><div class="ph-word">Building automation</div></div>
+
+    <div id="ph-q" class="clip ph-line" data-start="6" data-duration="2" data-track-index="4"><span class="w" id="ph-q-0">Who</span> <span class="w" id="ph-q-1">checks</span><br><span class="w" id="ph-q-2">the</span> <span class="w volt" id="ph-q-3">code?</span></div>
+  </div>
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    // one slow camera move per photo, direction alternates
+    tl.fromTo("#ph-0 img", {scale:0.86, x:0},   {scale:0.93, duration:2, ease:"none"}, 0);
+    tl.fromTo("#ph-1 img", {scale:0.92, x:-30}, {scale:0.92, x:30, duration:1, ease:"none"}, 2);
+    tl.fromTo("#ph-2 img", {scale:0.95},        {scale:0.90, duration:1, ease:"none"}, 3);
+    tl.fromTo("#ph-3 img", {scale:0.90, x:30},  {scale:0.90, x:-30, duration:1, ease:"none"}, 4);
+    tl.fromTo("#ph-4 img", {scale:0.88},        {scale:0.94, duration:1, ease:"none"}, 5);
+    tl.fromTo("#ph-5 img", {scale:0.96},        {scale:0.88, duration:2, ease:"none"}, 6);
+    // hook: first word is on frame 0, the rest land on beats
+    tl.fromTo("#ph-hook-1", {opacity:0, scale:1.14, transformOrigin:"0% 100%"}, {opacity:1, scale:1, duration:0.14, ease:"power3.out"}, 0.5);
+    tl.fromTo("#ph-hook-2", {opacity:0, scale:1.14, transformOrigin:"0% 100%"}, {opacity:1, scale:1, duration:0.14, ease:"power3.out"}, 1.0);
+    // sectors: word wipes in on the cut, protocol names land half a beat later
+    [0,1,2,3].forEach(function (i) {
+      const t = 2 + i;
+      tl.fromTo("#ph-sec-" + i + " .ph-word", {clipPath:"inset(0% 100% 0% 0%)"}, {clipPath:"inset(0% 0% 0% 0%)", duration:0.2, ease:"power4.out"}, t);
+      tl.fromTo("#ph-sec-" + i + " .ph-proto", {opacity:0}, {opacity:1, duration:0.04, ease:"none"}, t);
+    });
+    // question: one word per beat into the drop
+    tl.fromTo("#ph-q-0", {opacity:0, scale:1.14, transformOrigin:"0% 100%"}, {opacity:1, scale:1, duration:0.14, ease:"power3.out"}, 6.0);
+    tl.fromTo("#ph-q-1", {opacity:0, scale:1.14, transformOrigin:"0% 100%"}, {opacity:1, scale:1, duration:0.14, ease:"power3.out"}, 6.5);
+    tl.fromTo("#ph-q-2", {opacity:0, scale:1.14, transformOrigin:"0% 100%"}, {opacity:1, scale:1, duration:0.14, ease:"power3.out"}, 7.0);
+    tl.fromTo("#ph-q-3", {opacity:0, scale:1.3, transformOrigin:"0% 100%"}, {opacity:1, scale:1, duration:0.16, ease:"power3.out"}, 7.0);
+    window.__timelines["photos"] = tl;
+  </script>
+</template>

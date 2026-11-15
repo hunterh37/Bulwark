@@ -86,3 +86,18 @@ create table if not exists scans (
 );
 alter table findings add column if not exists fix_error text;
 alter table findings add column if not exists fix_engine text;
+alter table findings add column if not exists fingerprint text;
+alter table findings add column if not exists context text;
+alter table findings add column if not exists cwe text;
+alter table findings add column if not exists kev boolean not null default false;
+alter table findings add column if not exists first_seen timestamptz;
+alter table findings add column if not exists is_new boolean not null default false;
+create index if not exists findings_scan on findings (scan_id);
+create index if not exists findings_fp on findings (org_id, repo, fingerprint);
+alter table scans add column if not exists components jsonb;
+alter table scans add column if not exists new_findings int not null default 0;
+alter table scans add column if not exists trigger text not null default 'manual';
+create index if not exists scans_org on scans (org_id, repo, created_at desc);
+alter table orgs add column if not exists alert_webhook_enc text;
+alter table orgs add column if not exists scan_interval_hours int not null default 24;
+create index if not exists sessions_exp on sessions (expires_at);

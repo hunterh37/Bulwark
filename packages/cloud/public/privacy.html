@@ -6,11 +6,11 @@
 <h1>Privacy</h1>
 <p class="lead">Last updated November 15, 2026.</p>
 <h2>What Bulwark stores</h2>
-<p>Account email, name, password hash (scrypt), organization name and sector. Session and runner tokens as SHA-256 hashes. GitHub tokens encrypted with AES-256-GCM. Repository names, scan records, findings (rule, file path, line, message) and an audit log of account actions.</p>
+<p>Account email, name, password hash (scrypt), organization name and sector. Session and runner tokens as SHA-256 hashes. GitHub tokens encrypted with AES-256-GCM. Alert webhook URLs encrypted the same way. Repository names, scan records, findings (rule, file path, line, message), the dependency list of each scan (package names and versions) and an audit log of account actions.</p>
 <h2>Source code</h2>
-<p>Cloud scans read repository files through the GitHub API into memory for the length of one scan. File contents are not written to disk or the database. Fix pull requests read and write only the file being fixed. Bulwark Edge never sends source code; in connected mode it sends findings, a heartbeat, and for the dependency module the package names and versions from lockfiles. In air-gapped mode it sends nothing.</p>
+<p>Cloud scans read repository files through the GitHub API into memory for the length of one scan. File contents are not written to disk or the database. Fix pull requests read and write only the file being fixed. Bulwark Edge never sends source code; in connected mode it sends findings, a heartbeat and the package names and versions from lockfiles. In air-gapped mode it sends nothing.</p>
 <h2>Third parties</h2>
-<p>Render (hosting and database, United States), GitHub (repository access you grant), OSV.dev (package name and version lookups) and, when model patches are enabled, Anthropic (the single file being fixed). No advertising or analytics trackers.</p>
+<p>Render (hosting and database, United States), GitHub (repository access you grant), OSV.dev (package name and version lookups), CISA (download of the public Known Exploited Vulnerabilities catalog; nothing is sent), the alert webhook you configure (repository name, commit and finding counts) and, when model patches are enabled, Anthropic (the single file being fixed). No advertising or analytics trackers.</p>
 <h2>Deletion</h2>
-<p>Disconnecting GitHub deletes the stored token immediately. To delete an account and all its data, email the address on your invoice or open an issue at github.com/hunterh37/Bulwark.</p>
+<p>Disconnecting GitHub deletes the stored token immediately. Portal, Settings, Delete organization removes the account, repositories, scans, findings, runner tokens and audit log at once.</p>
 </main></body></html>

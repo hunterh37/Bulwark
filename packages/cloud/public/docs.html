@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Bulwark Docs</title><link rel="icon" href="/assets/logo-mark.svg"><link rel="stylesheet" href="/assets/style.css"></head>
+<body><main class="wrap">
+<nav><a class="logo" href="/"><img src="/assets/logo-mark.svg" alt="">BULWARK</a><div class="links"><a class="btn ghost" href="/portal">Portal</a></div></nav>
+<h1>Docs</h1>
+
+<h2 id="ci">CI gate (GitHub Actions)</h2>
+<p class="lead">No account needed. The runner scans the checkout, fails the job at the chosen severity and writes SARIF for GitHub code scanning.</p>
+<pre>- uses: actions/checkout@v4
+- uses: hunterh37/Bulwark@main
+  with:
+    fail-on: high
+- uses: github/codeql-action/upload-sarif@v3
+  if: always()
+  with:
+    sarif_file: bulwark-results</pre>
+
+<h2 id="cli">Command line</h2>
+<pre data-origin>curl -O https://bulwark-cloud.onrender.com/download/bulwark-runner.mjs
+node bulwark-runner.mjs scan . --offline --list --fail-on high</pre>
+<p>Writes <span class="mono">bulwark-results/&lt;repo&gt;.json</span>, <span class="mono">.sarif</span> and <span class="mono">.cdx.json</span> (CycloneDX 1.5 SBOM). Needs Node 20 or later, no other dependency.</p>
+<div class="tbl"><table>
+<tr><th>Flag</th><th>Effect</th></tr>
+<tr><td class="mono">--offline</td><td>No network. Dependency advisories are skipped.</td></tr>
+<tr><td class="mono">--osv</td><td>Look up dependency advisories at OSV.dev and the CISA KEV catalog directly. Sends package names and versions.</td></tr>
+<tr><td class="mono">--fail-on critical|high|medium</td><td>Exit 2 when a finding at or above the level is in non-test code.</td></tr>
+<tr><td class="mono">--list</td><td>Print each finding. Add <span class="mono">--include-tests</span> for test, example and third-party paths.</td></tr>
+<tr><td class="mono">--repo, --out</td><td>Repository name in the results and the output directory.</td></tr>
+</table></div>
+
+<h2 id="cloud">Cloud</h2>
+<p>Create an account, add a repository as <span class="mono">owner/name</span> and press Scan now. Public repositories scan without a token. Private repositories and fix pull requests need a fine-grained GitHub token: Contents read and Metadata read to scan, plus Contents write and Pull requests write to open fix PRs. Repositories rescan on the interval set under Settings (daily by default), and new high or critical findings post to the alert webhook.</p>
+
+<h2 id="edge">Edge runner</h2>
+<pre data-origin>export BULWARK_URL=https://bulwark-cloud.onrender.com
+export BULWARK_TOKEN=bwr_…            # Portal, Edge runners, Create runner token
+node bulwark-runner.mjs watch /srv/git/scada-hmi --every 3600</pre>
+<p>Connected mode sends findings (rule, file path, line, message), the component list (package names and versions) and a heartbeat. Source code is not sent. Air-gapped mode (<span class="mono">--offline</span>) sends nothing.</p>
+
+<h2 id="findings">Reading findings</h2>
+<p>Each finding has a rule id, CWE id, file, line, severity and a fingerprint. The fingerprint is built from the rule, the path and the matched text, so a finding keeps its status (ignored, PR open) and first-seen date when lines move. Findings in test, example, documentation and third-party paths are reported at low severity and hidden by default. Dependency advisories in the CISA Known Exploited Vulnerabilities catalog are raised to critical and tagged KEV.</p>
+
+<h2 id="evidence">Evidence</h2>
+<p>Portal, Overview, Evidence report opens a printable report: scope, scan dates and commits, open findings with CWE ids, fix pull requests, SBOM component counts and the audit log. Portal, GitHub, SBOM downloads a CycloneDX 1.5 file per repository. The report maps Bulwark records to IEC 62443-4-1 practice areas, the EU Cyber Resilience Act Annex I Part II and NERC CIP-013. It is input to an assessment and is not a certification.</p>
+
+<h2 id="accuracy">Measured accuracy</h2>
+<p>Labeled corpus: <a href="https://github.com/hunterh37/Bulwark/blob/main/packages/cloud/eval/REPORT.md">eval/REPORT.md</a>, run in CI on every push. Field run on 15 public OT repositories with hand labels: <a href="https://github.com/hunterh37/Bulwark/blob/main/packages/cloud/eval/FIELD.md">eval/FIELD.md</a>.</p>
+
+<h2 id="rules">Rules</h2>
+<div class="tbl"><table id="rules"><tr><td>Loading…</td></tr></table></div>
+<footer>Bulwark, 2026. MIT licensed. <a href="https://github.com/hunterh37/Bulwark">Source</a> · <a href="/privacy">Privacy</a></footer>
+</main><script src="/assets/landing.js"></script></body></html>
