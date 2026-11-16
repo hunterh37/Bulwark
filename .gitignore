@@ -11,3 +11,13 @@ packages/cloud/public/download/bulwark-*
 packages/cloud/public/download/SHA256SUMS.txt
 packages/cloud/public/download/docker-compose.yml
 packages/cloud/public/download/
+!/egbe-docs/marketing/campaigns/instantly/outreach.db
+/egbe-docs/**/.local/
+/egbe-docs/**/.env
+/egbe-docs/**/.env.*
+/egbe-docs/**/*.lock
+/egbe-docs/**/*.tmp
+/egbe-docs/**/*-wal
+/egbe-docs/**/*-shm
+/egbe-docs/**/*-journal
+egbe-docs/research/icp-leads/work/

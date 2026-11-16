@@ -1,0 +1,1 @@
+.claude/skills/egbe-os-quickstart/resources/EGBE.md

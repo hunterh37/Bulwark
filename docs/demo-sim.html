@@ -1,0 +1,372 @@
+<title>Bulwark Demo Simulator</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: control-room board. Customer org (left) -> Bulwark Cloud pipeline (center) -> portal (right); Edge substation strip below. */
+:root{
+  --bg:#eef1f4; --panel:#ffffff; --line:#d3d9e0; --fg:#18222d; --mute:#5b6876;
+  --accent:#c7781a; --accent-soft:#f6e6cf; --wire:#2f6f9f;
+  --crit:#b3261e; --high:#d0551b; --med:#a57d00; --low:#4f7a4a; --ok:#2e7d4f;
+  --chip:#e6eaef;
+  --display:"Barlow Condensed","Arial Narrow",sans-serif;
+  --sans:"IBM Plex Sans",system-ui,sans-serif;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0f151c; --panel:#16202a; --line:#2a3744; --fg:#e3e9ef; --mute:#93a1b0;
+  --accent:#f0a040; --accent-soft:#3a2c17; --wire:#6fb0e0;
+  --crit:#ff6b5f; --high:#ff8a4c; --med:#e6c14a; --low:#8cc084; --ok:#5fcf8c; --chip:#22303d; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0f151c; --panel:#16202a; --line:#2a3744; --fg:#e3e9ef; --mute:#93a1b0;
+  --accent:#f0a040; --accent-soft:#3a2c17; --wire:#6fb0e0;
+  --crit:#ff6b5f; --high:#ff8a4c; --med:#e6c14a; --low:#8cc084; --ok:#5fcf8c; --chip:#22303d; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--fg);font-family:var(--sans);font-size:14px;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:16px 40px}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:.02em;margin:0;text-wrap:balance}
+h1{font-size:30px} h2{font-size:18px;text-transform:uppercase;letter-spacing:.08em}
+.mono{font-family:var(--mono)} .mute{color:var(--mute)}
+.top{display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between;margin-bottom:14px}
+.brand{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap}
+.tag{font-family:var(--mono);font-size:11px;padding:2px 8px;border:1px solid var(--line);border-radius:3px;color:var(--mute)}
+.ctrls{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+button,select{font:500 13px var(--sans);border:1px solid var(--line);background:var(--panel);color:var(--fg);padding:7px 12px;border-radius:4px;cursor:pointer}
+button:hover{border-color:var(--accent)}
+button:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#1a1206;font-weight:600}
+button.danger{color:var(--crit)}
+button[aria-pressed="true"]{background:var(--crit);color:#fff;border-color:var(--crit)}
+.scene{display:flex;gap:10px;align-items:center;flex-wrap:wrap;background:var(--accent-soft);border:1px solid var(--accent);border-radius:4px;padding:10px 14px;margin-bottom:14px}
+.scene b{font-family:var(--display);font-size:18px;letter-spacing:.04em}
+.steps{display:flex;gap:4px;flex-wrap:wrap}
+.steps span{width:22px;height:6px;border-radius:2px;background:var(--line)}
+.steps span.on{background:var(--accent)}
+.grid{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.15fr) minmax(0,1.2fr);gap:14px}
+@media (max-width:1100px){.grid{grid-template-columns:minmax(0,1fr)}}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:14px;display:flex;flex-direction:column;gap:12px;min-width:0}
+.ph{display:flex;justify-content:space-between;align-items:baseline;gap:8px;flex-wrap:wrap}
+.sub{font-size:12px;color:var(--mute)}
+.repo{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;align-items:center;padding:7px 0;border-top:1px solid var(--line)}
+.repo:first-child{border-top:0}
+.dot{width:9px;height:9px;border-radius:50%;background:var(--line)}
+.dot.ok{background:var(--ok)} .dot.bad{background:var(--crit)} .dot.run{background:var(--accent);animation:pulse 1s infinite}
+@keyframes pulse{50%{opacity:.3}}
+.rname{font-family:var(--mono);font-size:12.5px;overflow-wrap:anywhere}
+.rlang{font-size:11px;color:var(--mute)}
+.cnt{font-family:var(--mono);font-size:12px;font-variant-numeric:tabular-nums}
+.feed{display:flex;flex-direction:column;gap:6px;max-height:300px;overflow:auto}
+.ev{font-size:12.5px;padding:7px 9px;border-radius:4px;background:var(--chip);display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;animation:in .3s ease}
+@keyframes in{from{transform:translateY(-4px);opacity:.4}}
+.ev .who{font-family:var(--mono);font-size:11px;color:var(--mute);white-space:nowrap}
+.ev code{font-family:var(--mono);font-size:11.5px}
+.pr{border:1px solid var(--line);border-radius:4px;padding:9px 10px;display:flex;flex-direction:column;gap:5px;animation:in .3s ease}
+.pr .t{font-weight:600;font-size:13px;overflow-wrap:anywhere}
+.pr .m{display:flex;gap:6px;flex-wrap:wrap;align-items:center}
+.pill{font-family:var(--mono);font-size:10.5px;padding:2px 7px;border-radius:10px;background:var(--chip);white-space:nowrap}
+.pill.open{color:var(--ok);border:1px solid var(--ok);background:transparent}
+.pill.merged{background:#6a4bc4;color:#fff}
+.pill.wait{color:var(--accent);border:1px solid var(--accent);background:transparent}
+.pill.fail{color:var(--crit);border:1px solid var(--crit);background:transparent}
+.diff{font-family:var(--mono);font-size:11px;background:var(--bg);border-radius:3px;padding:6px 8px;overflow-x:auto;white-space:pre}
+.diff .d{color:var(--crit)} .diff .a{color:var(--ok)}
+.approve{align-self:flex-start;font-size:12px;padding:4px 10px}
+/* pipeline */
+.pipe{display:flex;flex-direction:column;gap:0}
+.stage{display:grid;grid-template-columns:28px minmax(0,1fr) auto;gap:10px;align-items:center;padding:8px 6px;border-radius:4px;position:relative}
+.stage .n{font-family:var(--mono);font-size:11px;width:24px;height:24px;border-radius:50%;border:1.5px solid var(--line);display:grid;place-items:center;color:var(--mute);background:var(--panel);z-index:1}
+.stage:not(:last-child)::after{content:"";position:absolute;left:18px;top:32px;bottom:-8px;width:2px;background:var(--line)}
+.stage.active{background:var(--accent-soft)}
+.stage.active .n{border-color:var(--accent);color:var(--accent);animation:pulse 1s infinite}
+.stage.done .n{border-color:var(--ok);background:var(--ok);color:#fff}
+.stage .l{font-weight:600;font-size:13px} .stage .d{font-size:11.5px;color:var(--mute);overflow-wrap:anywhere}
+.stage .s{font-family:var(--mono);font-size:11px;color:var(--mute);white-space:nowrap}
+.mods{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:8px}
+.mod{border:1px solid var(--line);border-radius:4px;padding:8px 9px;display:flex;flex-direction:column;gap:3px}
+.mod .h{display:flex;justify-content:space-between;align-items:center;gap:6px}
+.mod .nm{font-family:var(--mono);font-size:12px;font-weight:500}
+.mod .v{font-size:10.5px;color:var(--mute)}
+.mod .st{font-size:10.5px;font-family:var(--mono)}
+.mod.busy{border-color:var(--accent)}
+.led{width:8px;height:8px;border-radius:50%;background:var(--ok);flex:none}
+.mod.busy .led{background:var(--accent);animation:pulse .6s infinite}
+.mod.off .led{background:var(--crit)}
+/* portal */
+.kpis{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+@media (max-width:520px){.kpis{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.kpi{border:1px solid var(--line);border-radius:4px;padding:8px 10px}
+.kpi .k{font-size:10.5px;text-transform:uppercase;letter-spacing:.08em;color:var(--mute)}
+.kpi .v{font-family:var(--display);font-size:28px;font-weight:600;font-variant-numeric:tabular-nums;line-height:1.1}
+.kpi .v small{font-size:14px;color:var(--mute)}
+.sevbar{display:flex;height:10px;border-radius:2px;overflow:hidden;background:var(--chip)}
+.sevbar i{display:block;transition:width .4s}
+.legend{display:flex;gap:12px;flex-wrap:wrap;font-size:11.5px;color:var(--mute)}
+.legend b{display:inline-block;width:9px;height:9px;border-radius:2px;margin-right:4px;vertical-align:-1px}
+.tabs{display:flex;gap:4px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.tabs button{border:0;border-bottom:2px solid transparent;border-radius:0;background:none;padding:6px 10px;color:var(--mute)}
+.tabs button.on{color:var(--fg);border-bottom-color:var(--accent)}
+.tbl{overflow-x:auto;max-height:340px;overflow-y:auto}
+table{width:100%;border-collapse:collapse;font-size:12px}
+th{text-align:left;font-weight:500;color:var(--mute);font-size:10.5px;text-transform:uppercase;letter-spacing:.06em;padding:5px 6px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--panel)}
+td{padding:6px;border-bottom:1px solid var(--line);vertical-align:top}
+td.mono{font-size:11.5px}
+.sev{font-family:var(--mono);font-size:10.5px;font-weight:600;padding:1px 6px;border-radius:3px;color:#fff;white-space:nowrap}
+.sev.critical{background:var(--crit)} .sev.high{background:var(--high)} .sev.medium{background:var(--med)} .sev.low{background:var(--low)}
+tr.fixed td{color:var(--mute)} tr.fixed .rule{text-decoration:line-through}
+.state{font-family:var(--mono);font-size:10.5px;white-space:nowrap}
+.audit{font-family:var(--mono);font-size:11px;display:flex;flex-direction:column;gap:3px;max-height:340px;overflow:auto}
+.audit div{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px;padding:3px 0;border-bottom:1px dashed var(--line)}
+.audit .h{color:var(--mute)}
+.slack{border-left:3px solid var(--accent);padding:8px 10px;background:var(--chip);border-radius:0 4px 4px 0;font-size:12.5px;animation:in .3s}
+/* edge */
+.edge{margin-top:14px}
+.edgegrid{display:grid;grid-template-columns:minmax(0,1.2fr) minmax(0,1fr) minmax(0,1fr);gap:14px;align-items:start}
+@media (max-width:900px){.edgegrid{grid-template-columns:minmax(0,1fr)}}
+.gap{display:flex;align-items:center;gap:10px;font-family:var(--mono);font-size:11.5px;flex-wrap:wrap}
+.airgap{border:2px dashed var(--crit);color:var(--crit);padding:4px 8px;border-radius:3px;font-weight:600}
+.usb{padding:4px 8px;border:1px solid var(--line);border-radius:3px;background:var(--chip);transition:transform .8s}
+.usb.move{transform:translateX(40px)}
+.dev{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:8px;font-size:12px;padding:5px 0;border-top:1px solid var(--line);align-items:center}
+.export{display:flex;flex-direction:column;gap:6px}
+.doc{border:1px solid var(--line);border-radius:4px;padding:8px 10px;font-size:12px;display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.foot{margin-top:18px;font-size:11.5px;color:var(--mute);max-width:80ch}
+.killbanner{background:var(--crit);color:#fff;padding:8px 12px;border-radius:4px;font-weight:600;font-size:13px}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+
+<div class="top">
+  <div class="brand"><h1>Bulwark Demo Simulator</h1><span class="tag">rules 1.1.0</span><span class="tag">mock tenant: Ridgeline Grid Co.</span></div>
+  <div class="ctrls">
+    <button class="primary" id="play">Play full demo</button>
+    <button id="step">Next scene</button>
+    <button id="reset">Reset</button>
+    <label class="sub" for="speed">Speed</label>
+    <select id="speed"><option value="1.6">Slow</option><option value="1" selected>Normal</option><option value="0.5">Fast</option></select>
+  </div>
+</div>
+
+<div class="scene" aria-live="polite"><b id="sceneTitle">Ready</b><span id="sceneText" class="sub">Press Play for the scripted 7-scene demo, or inject events by hand below.</span><div class="steps" id="steps"></div></div>
+
+<div class="ctrls" style="margin-bottom:14px">
+  <span class="sub">Inject:</span>
+  <button id="iPush">Dev pushes insecure OCPP code</button>
+  <button id="iCve">New CVE lands in OSV / CISA KEV</button>
+  <button id="iSecret">Engineer commits a device password</button>
+  <button id="iEdge">Edge runner offline scan</button>
+  <button id="iEvidence">Export NERC CIP evidence</button>
+  <button class="danger" id="kill" aria-pressed="false">Kill switch</button>
+</div>
+
+<div class="grid">
+  <!-- customer -->
+  <section class="panel">
+    <div class="ph"><h2>Customer: Ridgeline Grid Co.</h2><span class="sub">GitHub org ridgeline-grid · 140 engineers</span></div>
+    <div id="repos"></div>
+    <div class="ph"><h3 style="font-size:15px">Engineering activity</h3><span class="sub">pushes, PR reviews, merges</span></div>
+    <div class="feed" id="devfeed"></div>
+    <div class="ph"><h3 style="font-size:15px">Pull requests from Bulwark</h3><span class="sub" id="prcount">0 open</span></div>
+    <div class="feed" id="prs" style="max-height:420px"></div>
+  </section>
+
+  <!-- bulwark cloud -->
+  <section class="panel">
+    <div class="ph"><h2>Bulwark Cloud</h2><span class="sub mono">bulwark-cloud.onrender.com</span></div>
+    <div id="killslot"></div>
+    <div class="pipe" id="pipe"></div>
+    <div class="ph"><h3 style="font-size:15px">Modules deployed</h3><span class="sub" id="modcount"></span></div>
+    <div class="mods" id="mods"></div>
+    <div class="ph"><h3 style="font-size:15px">Job queue</h3><span class="sub" id="qlen">idle</span></div>
+    <div class="feed" id="jobs" style="max-height:180px"></div>
+  </section>
+
+  <!-- portal -->
+  <section class="panel">
+    <div class="ph"><h2>Customer portal</h2><span class="sub">what the CTO / CISO sees</span></div>
+    <div class="kpis">
+      <div class="kpi"><div class="k">Repos</div><div class="v" id="kRepos">0</div></div>
+      <div class="kpi"><div class="k">Open findings</div><div class="v" id="kOpen">0</div></div>
+      <div class="kpi"><div class="k">Fixed</div><div class="v" id="kFixed">0</div></div>
+      <div class="kpi"><div class="k">PR merge rate</div><div class="v" id="kMerge">–</div></div>
+      <div class="kpi"><div class="k">Median fix</div><div class="v" id="kTtf">–</div></div>
+      <div class="kpi"><div class="k">KEV exposed</div><div class="v" id="kKev">0</div></div>
+      <div class="kpi"><div class="k">Edge sites</div><div class="v" id="kEdge">0</div></div>
+      <div class="kpi"><div class="k">MRR</div><div class="v" id="kMrr">$0</div></div>
+    </div>
+    <div class="sevbar" id="sevbar"></div>
+    <div class="legend"><span><b style="background:var(--crit)"></b>critical <span id="lc">0</span></span><span><b style="background:var(--high)"></b>high <span id="lh">0</span></span><span><b style="background:var(--med)"></b>medium <span id="lm">0</span></span><span><b style="background:var(--low)"></b>low <span id="ll">0</span></span></div>
+    <div class="tabs" role="tablist">
+      <button class="on" data-tab="findings">Findings</button><button data-tab="audit">Audit log</button><button data-tab="alerts">Slack alerts</button>
+    </div>
+    <div id="tab-findings" class="tbl"><table><thead><tr><th>Sev</th><th>Rule</th><th>Location</th><th>State</th></tr></thead><tbody id="ftable"></tbody></table></div>
+    <div id="tab-audit" class="audit" hidden></div>
+    <div id="tab-alerts" class="feed" hidden style="max-height:340px"></div>
+  </section>
+</div>
+
+<section class="panel edge">
+  <div class="ph"><h2>Bulwark Edge: Ridgeline substation 14 (Sandy Creek 115 kV)</h2><span class="sub">OT network, no internet route</span></div>
+  <div class="edgegrid">
+    <div>
+      <div class="gap"><span class="usb" id="usb">rule bundle 1.1.0 · sig ed25519</span><span class="airgap">AIR GAP</span><span class="mute">runner: bulwark-edge (systemd) on HMI-02</span></div>
+      <div id="edgedevs" style="margin-top:8px"></div>
+    </div>
+    <div><h3 style="font-size:15px;margin-bottom:6px">Edge log</h3><div class="audit" id="edgelog" style="max-height:200px"></div></div>
+    <div class="export"><h3 style="font-size:15px">Exports</h3><div id="exports"><div class="sub">Nothing exported yet.</div></div></div>
+  </div>
+</section>
+
+<p class="foot">Mock data. Ridgeline Grid Co. and every repo, person, and CVE id ending in -DEMO are simulated so the B2B flow can be shown without a second company. Rule ids, CWEs and severities match packages/cloud/src/modules (grid-ot, secrets-core, deps-osv, autofix) at rules 1.1.0.</p>
+
+<script>
+(()=>{
+const $=id=>document.getElementById(id);
+const sleep=ms=>new Promise(r=>setTimeout(r,ms*speed));
+let speed=1, killed=false, running=false, sceneIdx=0, t0=Date.now();
+const S={repos:[],findings:[],prs:[],merged:0,closed:0,ttf:[],kev:0,edge:0,fid:1,pr:412};
+const REPOS=[
+ {name:"ocpp-gateway",lang:"TypeScript · OCPP 1.6J",seed:[["ot.modbus-tcp-server","medium","src/meter/poll.ts:41"],["dep.vuln","high","package.json · ws@7.4.5 GHSA-3h5v"]]},
+ {name:"scada-historian",lang:"Python · DNP3, Modbus",seed:[["ot.dnp3-no-sa","medium","historian/dnp3_client.py:88"],["ot.modbus-bind-all","high","historian/server.py:22"],["ot.setpoint-no-limit","high","historian/control.py:130"]]},
+ {name:"der-fleet-api",lang:"Go · IEC 61850, OPC UA",seed:[["ot.opcua-security-none","high","opcua/client.go:57"],["ot.iec61850-mms-plain","medium","mms/session.go:19"],["dep.vuln","medium","go.mod · golang.org/x/net"]]},
+ {name:"bms-bridge",lang:"Python · BACnet",seed:[["ot.bacnet-bind-all","medium","bridge/bacnet.py:14"],["ot.modbus-write-unchecked","low","bridge/modbus_out.py"]]},
+ {name:"outage-portal",lang:"React · customer web",seed:[["dep.vuln","low","package.json · semver@5.7.1"]]}
+];
+const MODS=[
+ ["grid-ot","OT protocol rules · 12 rules"],["secrets-core","keys, tokens, device passwords"],["deps-osv","OSV.dev SCA, 7 ecosystems"],
+ ["kev-feed","CISA KEV, hourly"],["autofix","patch + rescan + PR"],["sandbox","tests on patched tree"],
+ ["sbom","CycloneDX 1.5"],["evidence","NERC CIP-007/010 report"],["alerts","Slack + email"],
+ ["scheduler","nightly rescans"],["ci-action","GitHub Action gate · SARIF"],["edge-sync","signed bundles, air-gap"]];
+const STAGES=[["Webhook","GitHub App push / PR / install"],["Clone","ephemeral workspace, short-lived token"],["Scan","grid-ot · secrets-core · deps-osv"],["Triage","reachability + grid impact rank"],["Fix","autofix patch in sandbox, tests run"],["Rescan","finding gone, no new findings"],["Ship","PR with evidence, or approval gate"]];
+
+/* ---------- render ---------- */
+function renderRepos(){$("repos").innerHTML=S.repos.map(r=>{
+  const open=S.findings.filter(f=>f.repo===r.name&&f.state!=="fixed").length;
+  return `<div class="repo"><span class="dot ${r.st}"></span><div><div class="rname">ridgeline-grid/${r.name}</div><div class="rlang">${r.lang}</div></div><span class="cnt">${r.st==="run"?"scanning":open+" open"}</span></div>`}).join("")||'<div class="sub">GitHub App not installed yet.</div>';}
+function renderPipe(active=-1,done=-1,label=""){$("pipe").innerHTML=STAGES.map((s,i)=>`<div class="stage ${i===active?"active":i<=done?"done":""}"><span class="n">${i<=done?"✓":i+1}</span><div><div class="l">${s[0]}</div><div class="d">${s[1]}</div></div><span class="s">${i===active?label:""}</span></div>`).join("");}
+function renderMods(busy=[]){$("mods").innerHTML=MODS.map(([n,v])=>`<div class="mod ${killed?"off":busy.includes(n)?"busy":""}"><div class="h"><span class="nm">${n}</span><span class="led"></span></div><span class="v">${v}</span><span class="st">${killed?"halted":busy.includes(n)?"running":"deployed · healthy"}</span></div>`).join("");$("modcount").textContent=`${MODS.length}/${MODS.length} live`;}
+function renderPortal(){
+  const open=S.findings.filter(f=>f.state!=="fixed");const c={critical:0,high:0,medium:0,low:0};open.forEach(f=>c[f.sev]++);
+  $("kRepos").textContent=S.repos.length;$("kOpen").textContent=open.length;$("kFixed").textContent=S.findings.length-open.length;
+  const tot=S.merged+S.closed;$("kMerge").innerHTML=tot?Math.round(100*S.merged/tot)+"<small>%</small>":"–";
+  const m=[...S.ttf].sort((a,b)=>a-b);$("kTtf").innerHTML=m.length?m[Math.floor(m.length/2)]+"<small> min</small>":"–";
+  $("kKev").textContent=S.kev;$("kEdge").textContent=S.edge;$("kMrr").textContent="$"+(S.repos.length*49+(S.edge?1500:0)).toLocaleString();
+  const n=open.length||1;$("sevbar").innerHTML=["critical","high","medium","low"].map(k=>`<i style="width:${100*c[k]/n}%;background:var(--${k==="critical"?"crit":k==="medium"?"med":k})"></i>`).join("");
+  $("lc").textContent=c.critical;$("lh").textContent=c.high;$("lm").textContent=c.medium;$("ll").textContent=c.low;
+  const ord={critical:0,high:1,medium:2,low:3};
+  $("ftable").innerHTML=[...S.findings].sort((a,b)=>(a.state==="fixed")-(b.state==="fixed")||ord[a.sev]-ord[b.sev]).map(f=>`<tr class="${f.state==="fixed"?"fixed":""}"><td><span class="sev ${f.sev}">${f.sev.toUpperCase()}</span></td><td class="mono"><span class="rule">${f.rule}</span>${f.kev?' <span class="pill fail">KEV</span>':""}</td><td class="mono">${f.repo}<br><span class="mute">${f.loc}</span></td><td class="state">${f.state}</td></tr>`).join("")||'<tr><td colspan="4" class="mute">No findings yet.</td></tr>';
+  const o=S.prs.filter(p=>p.state==="open"||p.state==="approval").length;$("prcount").textContent=o+" open · "+S.merged+" merged";
+  renderRepos();
+}
+function ts(){const s=Math.floor((Date.now()-t0)/1000);return new Date(Date.UTC(2026,10,15,14,0,s)).toISOString().slice(11,19)}
+function audit(msg){const d=document.createElement("div");d.innerHTML=`<span class="h">${ts()}</span><span>${msg}</span>`;$("tab-audit").prepend(d);}
+function dev(who,msg){const d=document.createElement("div");d.className="ev";d.innerHTML=`<span class="who">${who}</span><span>${msg}</span>`;$("devfeed").prepend(d);}
+function job(msg){const d=document.createElement("div");d.className="ev";d.innerHTML=`<span class="who">${ts()}</span><span>${msg}</span>`;$("jobs").prepend(d);while($("jobs").children.length>12)$("jobs").lastChild.remove();}
+function slack(msg){const d=document.createElement("div");d.className="slack";d.innerHTML=`<b>#grid-security</b> · Bulwark<br>${msg}`;$("tab-alerts").prepend(d);}
+function edgeLog(msg){const d=document.createElement("div");d.innerHTML=`<span class="h">${ts()}</span><span>${msg}</span>`;$("edgelog").prepend(d);}
+function addFinding(repo,rule,sev,loc,extra={}){const f={id:S.fid++,repo,rule,sev,loc,state:"open",t:Date.now(),...extra};S.findings.push(f);return f;}
+function addPR(p){p.n=S.pr++;p.state=p.state||"open";p.t=Date.now();S.prs.unshift(p);drawPRs();return p;}
+function drawPRs(){$("prs").innerHTML=S.prs.map(p=>`<div class="pr"><div class="t">#${p.n} ${p.title}</div><div class="m"><span class="pill ${p.state==="merged"?"merged":p.state==="approval"?"wait":p.state==="blocked"?"fail":"open"}">${p.state==="approval"?"needs human approval":p.state}</span><span class="pill">${p.repo}</span>${(p.checks||[]).map(c=>`<span class="pill">${c}</span>`).join("")}</div>${p.diff?`<div class="diff">${p.diff}</div>`:""}${p.state==="approval"?`<button class="approve" data-pr="${p.n}">Approve as ridgeline CISO</button>`:""}</div>`).join("")||'<div class="sub">No pull requests yet.</div>';}
+$("prs").addEventListener("click",e=>{const n=+e.target.dataset.pr;if(!n)return;const p=S.prs.find(x=>x.n===n);mergePR(p,"j.okafor (CISO)");});
+function mergePR(p,who){if(killed||p.state==="merged")return;p.state="merged";S.merged++;(p.fixes||[]).forEach(f=>{f.state="fixed";S.ttf.push(Math.max(2,Math.round((Date.now()-f.t)/1000/3)+p.ttfBase||6));});dev(who,`merged <code>#${p.n}</code> into <code>${p.repo}:main</code>`);audit(`pr.merged #${p.n} repo=${p.repo} by=${who}`);drawPRs();renderPortal();}
+async function pipeline(label,mods,hook){
+  if(killed){job("job refused: kill switch active");return false;}
+  renderMods(mods);
+  for(let i=0;i<STAGES.length;i++){if(killed){renderPipe();renderMods();return false;}renderPipe(i,i-1,label);if(hook)await hook(i);await sleep(520);}
+  renderPipe(-1,STAGES.length-1);await sleep(300);renderPipe();renderMods();return true;
+}
+
+/* ---------- scenes ---------- */
+async function sInstall(){
+  scene("Install","Ridgeline's VP Eng signs in with GitHub and installs the Bulwark GitHub App on 5 repos. Team plan, $49 per repo.");
+  dev("m.chen (VP Eng)","signed in with GitHub, selected <b>Team</b> plan");audit("org.created ridgeline-grid plan=team");
+  for(const r of REPOS){S.repos.push({...r,st:"run"});renderPortal();job(`installation_repositories.added ${r.name}`);audit(`github.install repo=${r.name} token=ghs_*** ttl=60m`);await sleep(220);}
+  for(const r of S.repos){
+    await pipeline("baseline "+r.name,["grid-ot","secrets-core","deps-osv","kev-feed","sbom"],async i=>{
+      if(i===2){r.seed.forEach(([rule,sev,loc])=>addFinding(r.name,rule,sev,loc));renderPortal();}
+      if(i===4||i===5)await sleep(-1);
+    });
+    r.st=S.findings.some(f=>f.repo===r.name&&f.sev!=="low"&&f.state!=="fixed")?"bad":"ok";
+    job(`baseline ${r.name}: ${r.seed.length} findings`);audit(`scan.baseline repo=${r.name} findings=${r.seed.length} code_deleted=true`);renderPortal();
+  }
+  slack(`Baseline done for <b>5 repos</b>: ${S.findings.length} findings, top risk <code>ot.modbus-bind-all</code> in scada-historian.`);
+}
+async function sAutofixBacklog(){
+  scene("Fix the backlog","Bulwark opens fix PRs for baseline findings it can patch safely. Each PR ships only after tests pass and the rescan is clean.");
+  const f=S.findings.find(x=>x.rule==="dep.vuln"&&x.repo==="ocpp-gateway");
+  if(f) await pipeline("autofix ws@7.4.5",["deps-osv","autofix","sandbox"],async i=>{if(i===6){addPR({repo:"ocpp-gateway",title:"Bump ws 7.4.5 → 7.5.10 (GHSA-3h5v-q93c-6h6q)",checks:["tests 214/214","rescan clean","1 file +1 −1"],diff:'<span class="d">-    "ws": "7.4.5",</span>\n<span class="a">+    "ws": "7.5.10",</span>',fixes:[f],ttfBase:4});audit("pr.opened repo=ocpp-gateway class=dep-patch automerge=on");}});
+  await sleep(500);const p=S.prs.find(x=>x.repo==="ocpp-gateway");if(p)mergePR(p,"bulwark[bot] auto-merge");
+  const g=S.findings.find(x=>x.rule==="ot.modbus-bind-all");
+  if(g) await pipeline("autofix modbus bind",["grid-ot","autofix","sandbox"],async i=>{if(i===6){addPR({repo:"scada-historian",title:"Bind Modbus TCP server to OT interface, not 0.0.0.0",checks:["tests 88/88","rescan clean","protected path"],diff:'<span class="d">- StartTcpServer(ctx, address=("0.0.0.0", 502))</span>\n<span class="a">+ StartTcpServer(ctx, address=(cfg.OT_BIND_ADDR, 502))</span>',fixes:[g],state:"approval",ttfBase:9});audit("pr.gated repo=scada-historian reason=protected_path:ot-handler");}});
+  slack("PR <b>#413</b> in scada-historian touches an OT protocol handler. Human approval required.");
+  await sleep(1200);const q=S.prs.find(x=>x.repo==="scada-historian"&&x.state==="approval");if(q&&running)mergePR(q,"j.okafor (CISO)");
+}
+async function sPush(){
+  scene("Push → gate → fix","A Ridgeline engineer pushes an OCPP charger endpoint over plain ws://. The CI action fails the PR and Bulwark proposes wss://.");
+  dev("a.ruiz","pushed <code>feat/charger-v2</code> to ocpp-gateway (3 files)");
+  const p0=addPR({repo:"ocpp-gateway",title:"feat: charger v2 handshake (opened by a.ruiz)",checks:["bulwark/ci-action ✗ high"],state:"blocked"});
+  let f;await pipeline("PR #"+p0.n,["ci-action","grid-ot","autofix","sandbox"],async i=>{
+    if(i===2){f=addFinding("ocpp-gateway","ot.ocpp-ws-plain","high","src/cs/server.ts:17");renderPortal();job("SARIF uploaded: 1 high (CWE-319)");}
+    if(i===6){addPR({repo:"ocpp-gateway",title:"Use wss:// with TLS for OCPP central system",checks:["tests 216/216","rescan clean","suggested on #"+p0.n],diff:'<span class="d">- new WebSocketServer({ port: 9000 })</span>\n<span class="a">+ https.createServer(tls).listen(9000); new WebSocketServer({ server })</span>',fixes:[f],ttfBase:3});}
+  });
+  await sleep(700);const p=S.prs[0];mergePR(p,"a.ruiz");p0.state="open";p0.checks=["bulwark/ci-action ✓"];drawPRs();
+}
+async function sCve(){
+  scene("New CVE in the wild","CISA adds a Modbus library CVE to KEV. Bulwark finds every affected repo within minutes, no push required.");
+  job("kev-feed: +1 CVE-2026-31337-DEMO (pymodbus < 3.6.9, KEV)");audit("feed.kev added=CVE-2026-31337-DEMO");
+  const hit=["scada-historian","bms-bridge"];const fs=[];
+  for(const r of hit){await pipeline("rescan "+r,["kev-feed","deps-osv","autofix","sandbox"],async i=>{if(i===2){fs.push(addFinding(r,"dep.vuln","critical",`requirements.txt · pymodbus 3.5.2 CVE-2026-31337-DEMO`,{kev:true}));S.kev++;renderPortal();}});}
+  slack("<b>KEV alert</b>: CVE-2026-31337-DEMO hits <b>2 repos</b>. Patch PRs opened, auto-merge on for dependency patch bumps.");
+  fs.forEach(f=>addPR({repo:f.repo,title:"Bump pymodbus 3.5.2 → 3.6.9 (CISA KEV)",checks:["tests pass","rescan clean"],diff:'<span class="d">-pymodbus==3.5.2</span>\n<span class="a">+pymodbus==3.6.9</span>',fixes:[f],ttfBase:5}));
+  await sleep(800);S.prs.filter(p=>p.title.includes("pymodbus")&&p.state==="open").forEach(p=>{mergePR(p,"bulwark[bot] auto-merge");});S.kev=0;renderPortal();
+}
+async function sSecret(){
+  scene("Leaked device password","A field engineer commits an RTU admin password. secrets-core flags it as critical; the fix moves it to the vault, and the credential rotation is assigned to a human.");
+  dev("t.nguyen","pushed <code>hotfix/rtu-poll</code> to der-fleet-api");
+  let f;await pipeline("push der-fleet-api",["secrets-core","grid-ot","autofix","alerts"],async i=>{
+    if(i===2){f=addFinding("der-fleet-api","ot.default-credentials","critical","config/rtu.yaml:9 (OT_DEVICE_PASSWORD)");renderPortal();}
+    if(i===3){slack("<b>CRITICAL</b> ot.default-credentials in der-fleet-api. Rotate the RTU password; Bulwark PR removes it from the repo.");}
+    if(i===6){addPR({repo:"der-fleet-api",title:"Read RTU password from vault env, remove from config",checks:["tests 61/61","rescan clean","rotation: manual"],diff:'<span class="d">- password: "Sandy14!admin"</span>\n<span class="a">+ password: ${OT_DEVICE_PASSWORD}</span>',fixes:[f],state:"approval",ttfBase:12});audit("pr.gated repo=der-fleet-api reason=secret_rotation_required");}
+  });
+}
+async function sEdge(){
+  scene("Bulwark Edge, air-gapped","Substation 14 has no internet. The rule bundle arrives on signed media; the Edge runner scans PLC/RTU config locally and exports signed results.");
+  $("usb").classList.add("move");edgeLog("bundle rules-1.1.0.tgz imported, ed25519 signature OK");await sleep(700);
+  const devs=[["RTU-03 config","ot.dnp3-no-sa","medium"],["Relay SEL-751 export","ot.iec104-plain","medium"],["HMI-02 project","ot.default-credentials","critical"],["Gateway OPC UA","ok",""]];
+  $("edgedevs").innerHTML="";
+  for(const[d,r,s] of devs){await sleep(500);$("edgedevs").insertAdjacentHTML("beforeend",`<div class="dev"><span class="dot ${r==="ok"?"ok":"bad"}"></span><span>${d}</span><span class="mono" style="font-size:11px">${r==="ok"?"clean":`<span class="sev ${s}">${s}</span> ${r}`}</span></div>`);edgeLog(`scan ${d}: ${r==="ok"?"0 findings":r}`);if(r!=="ok")addFinding("edge:substation-14",r,s,d);}
+  S.edge=1;edgeLog("results-sub14.json.sig written to removable media");audit("edge.import site=substation-14 findings=3 signed=true");
+  $("usb").classList.remove("move");renderPortal();slack("Edge site <b>substation-14</b> uploaded 3 findings via offline sync.");
+}
+async function sEvidence(){
+  scene("Compliance evidence","The CISO exports a NERC CIP-007 / CIP-010 evidence report and CycloneDX SBOMs for the quarterly audit.");
+  renderMods(["evidence","sbom"]);await sleep(900);renderMods();
+  const fixed=S.findings.filter(f=>f.state==="fixed").length;
+  $("exports").innerHTML=`<div class="doc"><span><b>Evidence report</b> · CIP-007 R2, CIP-010 R1<br><span class="mute">${S.findings.length} findings, ${fixed} fixed, audit log ${$("tab-audit").children.length} entries</span></span><span class="pill">PDF</span></div>`+S.repos.map(r=>`<div class="doc"><span class="mono">${r.name}.cdx.json</span><span class="pill">CycloneDX 1.5</span></div>`).join("");
+  audit("report.exported type=nerc-cip-evidence by=j.okafor");
+}
+async function sKill(){
+  scene("Kill switch","Org-wide kill switch halts every job and blocks new PRs. Every action stays in the append-only audit log.");
+  toggleKill(true);await sleep(1400);toggleKill(false);
+}
+function toggleKill(on){killed=on;$("kill").setAttribute("aria-pressed",on);$("killslot").innerHTML=on?'<div class="killbanner">Kill switch on for ridgeline-grid. All scans, fixes and PRs halted.</div>':"";audit(`killswitch ${on?"enabled":"disabled"} org=ridgeline-grid by=j.okafor`);renderMods();}
+const SCENES=[sInstall,sAutofixBacklog,sPush,sCve,sSecret,sEdge,sEvidence,sKill];
+function scene(t,x){$("sceneTitle").textContent=t;$("sceneText").textContent=x;}
+function drawSteps(){$("steps").innerHTML=SCENES.map((_,i)=>`<span class="${i<sceneIdx?"on":""}"></span>`).join("");}
+
+async function runScene(fn){if(running)return;running=true;try{await fn();}finally{running=false;}}
+async function next(){if(sceneIdx>=SCENES.length)return;await runScene(SCENES[sceneIdx]);sceneIdx++;drawSteps();if(sceneIdx>=SCENES.length)scene("Demo complete","All modules exercised. Inject more events, or Reset.");}
+async function needInstall(){if(!S.repos.length){await runScene(sInstall);sceneIdx=Math.max(sceneIdx,1);drawSteps();}}
+$("play").onclick=async()=>{if(running)return;while(sceneIdx<SCENES.length){await next();await sleep(600);}};
+$("step").onclick=next;
+$("reset").onclick=()=>location.reload();
+$("speed").onchange=e=>speed=+e.target.value;
+$("iPush").onclick=async()=>{await needInstall();runScene(sPush)};
+$("iCve").onclick=async()=>{await needInstall();runScene(sCve)};
+$("iSecret").onclick=async()=>{await needInstall();runScene(sSecret)};
+$("iEdge").onclick=()=>runScene(sEdge);
+$("iEvidence").onclick=async()=>{await needInstall();runScene(sEvidence)};
+$("kill").onclick=()=>toggleKill(!killed);
+document.querySelectorAll(".tabs button").forEach(b=>b.onclick=()=>{document.querySelectorAll(".tabs button").forEach(x=>x.classList.toggle("on",x===b));["findings","audit","alerts"].forEach(t=>$("tab-"+t).hidden=t!==b.dataset.tab);});
+
+renderPipe();renderMods();renderPortal();drawPRs();drawSteps();
+$("edgedevs").innerHTML='<div class="sub">Waiting for bundle.</div>';
+})();
+</script>

@@ -1,0 +1,73 @@
+<!doctype html><html><head><meta charset="utf-8"><title>Bulwark Egbe demo</title><style>
+@page { size: 13.333in 7.5in; margin: 0; }
+* { box-sizing: border-box; }
+html, body { margin: 0; background: #0B0D10; color: #E8EAED; font: 17px/1.45 "Helvetica Neue", Helvetica, Arial, sans-serif; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+.page { width: 13.333in; height: 7.5in; padding: 0.62in 0.75in 0.5in; position: relative; overflow: hidden; break-after: page; }
+.page:last-child { break-after: auto; }
+.grid-bg { background-image: linear-gradient(#1b1f26 1px, transparent 1px), linear-gradient(90deg, #1b1f26 1px, transparent 1px); background-size: 48px 48px; }
+.kicker { font: 700 12px Menlo, monospace; letter-spacing: .18em; text-transform: uppercase; color: #F5C518; margin-bottom: 10px; }
+h1 { font-size: 64px; line-height: 1; letter-spacing: -.025em; font-weight: 800; margin: 0 0 18px; max-width: 9.6in; }
+h2 { font-size: 34px; line-height: 1.05; letter-spacing: -.02em; font-weight: 800; margin: 0 0 18px; }
+h3 { font-size: 16px; margin: 0 0 4px; }
+p { margin: 0 0 10px; }
+.muted { color: #8A919C; }
+.mono { font-family: Menlo, monospace; font-size: 13px; }
+.cols { display: grid; gap: 22px; }
+.c2 { grid-template-columns: 1fr 1fr; } .c3 { grid-template-columns: repeat(3, 1fr); } .c4 { grid-template-columns: repeat(4, 1fr); }
+.c64 { grid-template-columns: 1.15fr 1fr; }
+.card { background: #13161B; border: 1px solid #262B33; border-radius: 8px; padding: 16px 18px; }
+.card p { color: #B4BAC4; font-size: 14.5px; margin: 4px 0 0; }
+.stat { font: 700 40px Menlo, monospace; color: #F5C518; line-height: 1.1; }
+table { width: 100%; border-collapse: collapse; font-size: 13.5px; }
+th, td { text-align: left; padding: 6px 8px; border-bottom: 1px solid #262B33; vertical-align: top; }
+th { color: #8A919C; font-weight: 600; }
+td.n, th.n { text-align: right; font-family: Menlo, monospace; }
+.src { position: absolute; left: 0.75in; right: 0.75in; bottom: 0.3in; font-size: 10px; color: #6b727d; line-height: 1.35; }
+.src a { color: #6b727d; }
+.shot { width: 100%; border: 1px solid #262B33; border-radius: 8px; display: block; }
+.logo { display: flex; gap: 14px; align-items: center; font: 700 18px Menlo, monospace; letter-spacing: .22em; }
+.logo svg { width: 40px; height: 40px; }
+.pn { position: absolute; right: 0.75in; top: 0.42in; font: 700 11px Menlo, monospace; color: #6b727d; letter-spacing: .14em; }
+ul { margin: 0; padding-left: 18px; } li { margin: 0 0 6px; }
+.ok { color: #3DDC84; } .warn { color: #FF9F1C; }
+.volt { color: #F5C518; }
+.say{font-size:21px;line-height:1.5;margin:0 0 12px}.t{font:700 13px Menlo,monospace;color:#F5C518;display:inline-block;width:78px}
+.box{background:#13161B;border:1px solid #262B33;border-radius:8px;padding:12px 14px;font-size:14px}.arrow{color:#F5C518;font:700 22px Menlo;text-align:center;align-self:center}
+.flow{display:grid;grid-template-columns:1fr 30px 1fr 30px 1fr 30px 1fr;gap:6px}</style></head><body>
+<div class="page grid-bg"><div class="pn">01 / SCRIPT · 1:45</div><div class="kicker">Demo script · Bulwark × Egbe</div>
+<h2>Read aloud. Bold cues are actions.</h2>
+<p class="say"><span class="t">0:00</span>Bulwark scans grid and OT software: Modbus, DNP3, OCPP, BACnet, leaked secrets, KEV-listed dependencies. It opens a fix PR only after the patch rescans clean.</p>
+<p class="say"><span class="t">0:15</span>The scanner runs on our own stack, because utilities need SOC 2, data residency and air-gapped Edge. <b class="volt">Show portal.</b></p>
+<p class="say"><span class="t">0:30</span>Egbe is our go-to-market co-founder. Its market research skill sized the ICP: SaaS and energy teams of 20 to 500 engineers with no AppSec hire.</p>
+<p class="say"><span class="t">0:50</span>Keyword search came back with the wrong companies, so we targeted 20 named grid and EV domains instead. <b class="volt">Show lead table.</b></p>
+<p class="say"><span class="t">1:05</span>Egbe's Apollo gateway found 27 engineering and security leaders at 10 grid and EV software companies: Uplight, Voltus, GridX, Amperon, Octopus Energy. Each gets a free scan offer.</p>
+<p class="say"><span class="t">1:25</span>Umami analytics feeds the Business Loop: visits, signups, deposits, next action. <b class="volt">Show dashboard.</b></p>
+<p class="say"><span class="t">1:40</span>Egbe finds the buyers. Bulwark secures the grid. Thank you.</p></div>
+
+<div class="page"><div class="pn">02 / EGBE USE</div><div class="kicker">What Egbe did in this hackathon</div><h2>Egbe runs demand; Bulwark keeps customer code</h2>
+<div class="cols c2"><table><tr><th>Egbe skill</th><th>Use</th></tr>
+<tr><td>product-market-research</td><td>ICP, pricing check → PRD</td></tr>
+<tr><td>campaign-landing-page, deploy</td><td>Landing page on .egbe.app</td></tr>
+<tr><td>db</td><td>Waitlist: email + repo URL</td></tr>
+<tr><td>payments</td><td>Refundable preorder deposit</td></tr>
+<tr><td>google-ads, linkedin-ads</td><td>"dependabot alternative" test, capped</td></tr>
+<tr><td>apollo-lead-finder, instantly</td><td>50 CTOs, free-scan outreach</td></tr>
+<tr><td>analytics (Umami)</td><td>Visits, submits, deposits</td></tr>
+<tr><td>product-routines</td><td>Business Loop review cadence</td></tr></table>
+<table><tr><th>Bulwark own stack (Render)</th></tr><tr><td>GitHub App, detector modules grid-ot / secrets-core / deps-osv</td></tr><tr><td>Fix PR + rescan gate</td></tr><tr><td>Accounts, billing, findings DB, audit log</td></tr><tr><td>Edge runner, air-gapped</td></tr><tr><td>Reason: SOC 2, data residency, SSO</td></tr></table></div>
+<p class="muted" style="margin-top:18px">Limits verified via /me/limits on instance 2953. Own-domain connection unavailable; .egbe.app publishing available.</p></div>
+
+<div class="page grid-bg"><div class="pn">03 / CUSTOMIZER</div><div class="kicker">How Egbe customizes the agent</div><h2>Catalog skills + editable project playbooks</h2>
+<div class="flow"><div class="box"><b>Egbe catalog</b><br>46 egbe-os-* skills in .claude/skills (tools, APIs)</div><div class="arrow">→</div>
+<div class="box"><b>EGBE.md</b><br>symlink in repo root; CLAUDE.md tells the agent to apply it</div><div class="arrow">→</div>
+<div class="box"><b>Playbooks</b><br>egbe-docs/playbooks: product, market & acquisition. Editable per project</div><div class="arrow">→</div>
+<div class="box"><b>Business Loop</b><br>signal → work → feedback → next step, on a cadence</div></div>
+<div class="cols c3" style="margin-top:26px"><div class="card"><h3>Skill = capability</h3><p>How to call a service: ads, DB, mail, deploy. Updated by Egbe; local edits preserved.</p></div>
+<div class="card"><h3>Playbook = method</h3><p>How Bulwark decides: ICP, channels, evaluation. Edits recorded back to Egbe.</p></div>
+<div class="card"><h3>Plan / results</h3><p>This task's scope and evidence, kept in notes/ so another agent continues.</p></div></div>
+<p class="muted" style="margin-top:20px">Bulwark customization example: market.md ICP set to grid and OT teams; channel playbooks narrowed to Google, LinkedIn, Apollo + Instantly.</p></div><div class="page"><div class="pn">04 / EVIDENCE</div><div class="kicker">Egbe run log · 2026-11-15</div><h2>27 decision makers at 10 grid and EV accounts</h2>
+<div class="cols c64"><table><tr><th>Account</th><th class="n">#</th><th>Titles</th></tr><tr><td>Uplight</td><td class='n'>7</td><td>Director of Engineering, Infrastructure; Sr. Director of Engineering; Sr. Director - Engineering</td></tr><tr><td>Voltus</td><td class='n'>4</td><td>Vice President of Engineering; Chief Technology Officer; Director of Engineering</td></tr><tr><td>GridX, Inc.</td><td class='n'>3</td><td>Vice President of Engineering; Director of Engineering; Senior Director of Solutions Engineering</td></tr><tr><td>Amperon</td><td class='n'>3</td><td>VP of Engineering; Director, Engineering; Director of Data Engineering</td></tr><tr><td>Octopus Energy</td><td class='n'>3</td><td>Chief Technology Officer; Deputy Chief Technology Officer; Director and CTO - Octopus Energy Japan</td></tr><tr><td>Emporia</td><td class='n'>2</td><td>Vice President of Engineering; CTO Software</td></tr><tr><td>SPAN</td><td class='n'>2</td><td>Head of Security; Director of Manufacturing Engineering</td></tr><tr><td>Camus</td><td class='n'>1</td><td>Vice President of Engineering</td></tr><tr><td>Enel X</td><td class='n'>1</td><td>Director of Engineering</td></tr><tr><td>AmpUp</td><td class='n'>1</td><td>Vice President/Head of Engineering</td></tr></table>
+<div><table><tr><th>Run</th><th>Result</th></tr><tr><td>Keyword "EV charging software"</td><td class="warn">50 off-ICP</td></tr><tr><td>Keyword "SCADA, grid software"</td><td class="warn">same 50</td></tr><tr><td>20 named domains</td><td class="ok">27 on-ICP</td></tr></table>
+<p class="muted" style="margin-top:14px">Counter: Apollo People searches 3 / 100 daily. All 49 counters read 0 before this run. Search preview only; no enrichment, no emails sent. notes/research-market.md was written before Egbe was connected. Files: egbe-docs/research/icp-leads/.</p>
+<h3 style="margin-top:14px">Egbe good at</h3><p class="muted">One key for Apollo, Places, ads, hosting, DB, analytics; quota per day; skill + playbook per task.</p>
+<h3>Weak spot seen</h3><p class="muted">Apollo keyword filter did not narrow results; domain lists needed.</p></div></div></div></body></html>
